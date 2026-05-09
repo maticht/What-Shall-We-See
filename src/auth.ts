@@ -13,6 +13,10 @@ const authSecret =
 const authBaseUrl = process.env.NEXTAUTH_URL ?? process.env.AUTH_URL ?? "";
 const useSecureCookies =
   authBaseUrl.startsWith("https://") || process.env.VERCEL === "1";
+const cookiePrefix = useSecureCookies ? "__Secure-" : "";
+const csrfCookieName = useSecureCookies
+  ? "__Host-next-auth.csrf-token"
+  : "next-auth.csrf-token";
 
 const providers = [
   Google({
@@ -56,6 +60,63 @@ async function syncToken(
 export const authOptions: NextAuthOptions = {
   secret: authSecret,
   useSecureCookies,
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
+    callbackUrl: {
+      name: `${cookiePrefix}next-auth.callback-url`,
+      options: {
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
+    csrfToken: {
+      name: csrfCookieName,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
+    pkceCodeVerifier: {
+      name: `${cookiePrefix}next-auth.pkce.code_verifier`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+        maxAge: 900,
+      },
+    },
+    state: {
+      name: `${cookiePrefix}next-auth.state`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+        maxAge: 900,
+      },
+    },
+    nonce: {
+      name: `${cookiePrefix}next-auth.nonce`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
+  },
   pages: {
     signIn: "/",
   },
