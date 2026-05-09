@@ -1,46 +1,15 @@
-import { model, models, Schema, type InferSchemaType } from "mongoose";
-
-const itemSchema = new Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    status: {
-      type: String,
-      enum: ["planned", "in_progress", "done"],
-      default: "planned",
-    },
-    imageUrl: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    rating: {
-      type: Number,
-      default: null,
-    },
-    updatedByName: {
-      type: String,
-      default: null,
-    },
-    updatedByEmail: {
-      type: String,
-      default: null,
-    },
-  },
-  {
-    _id: true,
-    timestamps: true,
-  },
-);
+﻿import { model, models, Schema, type InferSchemaType } from "mongoose";
 
 const categorySchema = new Schema(
   {
     name: {
       type: String,
       required: true,
+      trim: true,
+    },
+    emoji: {
+      type: String,
+      default: "📁",
       trim: true,
     },
     scope: {
@@ -71,10 +40,6 @@ const categorySchema = new Schema(
     lastEditedByEmail: {
       type: String,
       default: null,
-    },
-    items: {
-      type: [itemSchema],
-      default: [],
     },
   },
   {

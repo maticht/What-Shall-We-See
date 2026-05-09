@@ -9,12 +9,19 @@ const toneMap: Record<MediaStatus, string> = {
   done: "border-emerald-200 bg-emerald-100/80 text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-400/10 dark:text-emerald-200",
 };
 
-export function StatusBadge({ status }: { status: MediaStatus }) {
+export function StatusBadge({
+  status,
+  className,
+}: {
+  status: MediaStatus;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-[var(--radius-ui)] border px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] uppercase",
+        "inline-flex self-start items-center rounded-[var(--radius-ui)] border px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] uppercase",
         toneMap[status],
+        className,
       )}
     >
       {formatStatus(status)}

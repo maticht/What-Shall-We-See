@@ -1,34 +1,10 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { requireAppUser } from "@/lib/auth-session";
-import Category from "@/models/category";
+import { findAuthorizedCategory } from "@/lib/category-access";
 import { parseCategoryPatchPayload } from "@/lib/validators";
+import Item from "@/models/item";
 
 export const runtime = "nodejs";
-
-async function findAuthorizedCategory(
-  categoryId: string,
-  userId: string,
-  connections: string[],
-) {
-  const category = await Category.findById(categoryId);
-
-  if (!category) {
-    return null;
-  }
-
-  const isPersonalOwner =
-    category.scope === "personal" && category.ownerId?.toString() === userId;
-  const isSharedMember =
-    category.scope === "shared" &&
-    Boolean(category.connectionKey) &&
-    connections.includes(category.connectionKey);
-
-  if (!isPersonalOwner && !isSharedMember) {
-    return undefined;
-  }
-
-  return category;
-}
 
 export async function PATCH(
   request: Request,
@@ -58,10 +34,14 @@ export async function PATCH(
 
     const payload = parseCategoryPatchPayload(await request.json());
 
-    category.name = payload.name;
-    category.lastEditedByName = user.name;
-    category.lastEditedByEmail = user.email;
-    await category.save();
+    await category.updateOne({
+      $set: {
+        name: payload.name,
+        emoji: payload.emoji,
+        lastEditedByName: user.name,
+        lastEditedByEmail: user.email,
+      },
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
@@ -97,6 +77,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  await Item.deleteMany({ categoryId: category._id });
   await category.deleteOne();
 
   return NextResponse.json({ ok: true });

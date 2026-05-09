@@ -1,90 +1,16 @@
+﻿import { Types } from "mongoose";
 import { connectToDatabase } from "@/lib/db";
 import { DEFAULT_PERSONAL_CATEGORIES } from "@/lib/constants";
+import { canAccessCategory } from "@/lib/category-access";
+import {
+  migrateLegacyItemsForCategories,
+  migrateLegacyItemsForCategory,
+} from "@/lib/legacy-items";
+import { serializeCategory, serializeItem } from "@/lib/serializers";
 import Category from "@/models/category";
+import Item from "@/models/item";
 import User from "@/models/user";
-import type {
-  CategoryData,
-  DashboardData,
-  DashboardUser,
-  MediaItemData,
-} from "@/types/app";
-
-function toIso(value: unknown) {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-
-  if (typeof value === "string") {
-    return new Date(value).toISOString();
-  }
-
-  return new Date().toISOString();
-}
-
-function serializeItem(item: {
-  _id: { toString(): string };
-  title: string;
-  status: MediaItemData["status"];
-  imageUrl: string;
-  rating?: number | null;
-  updatedByName?: string | null;
-  updatedByEmail?: string | null;
-  updatedAt?: Date | string;
-  createdAt?: Date | string;
-}): MediaItemData {
-  return {
-    id: item._id.toString(),
-    title: item.title,
-    status: item.status,
-    imageUrl: item.imageUrl,
-    rating: item.rating ?? null,
-    updatedByName: item.updatedByName ?? null,
-    updatedByEmail: item.updatedByEmail ?? null,
-    updatedAt: toIso(item.updatedAt ?? item.createdAt),
-  };
-}
-
-function serializeCategory(category: {
-  _id: { toString(): string };
-  name: string;
-  scope: CategoryData["scope"];
-  connectionKey?: string | null;
-  ownerId?: { toString(): string } | null;
-  createdBy: { toString(): string };
-  lastEditedByName?: string | null;
-  lastEditedByEmail?: string | null;
-  items?: Array<{
-    _id: { toString(): string };
-    title: string;
-    status: MediaItemData["status"];
-    imageUrl: string;
-    rating?: number | null;
-    updatedByName?: string | null;
-    updatedByEmail?: string | null;
-    updatedAt?: Date | string;
-    createdAt?: Date | string;
-  }>;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-}): CategoryData {
-  const items = (category.items ?? [])
-    .map(serializeItem)
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
-
-  return {
-    id: category._id.toString(),
-    name: category.name,
-    scope: category.scope,
-    connectionKey: category.connectionKey ?? null,
-    ownerId: category.ownerId ? category.ownerId.toString() : null,
-    createdBy: category.createdBy.toString(),
-    lastEditedByName: category.lastEditedByName ?? null,
-    lastEditedByEmail: category.lastEditedByEmail ?? null,
-    items,
-    createdAt: toIso(category.createdAt),
-    updatedAt: toIso(category.updatedAt),
-  };
-}
+import type { DashboardData, DashboardUser, PaginatedItemsData } from "@/types/app";
 
 function serializeUser(user: {
   _id: { toString(): string };
@@ -99,6 +25,75 @@ function serializeUser(user: {
     email: user.email,
     image: user.image ?? "",
     connections: [...new Set((user.connections ?? []).filter(Boolean))].sort(),
+  };
+}
+
+async function getItemCountsByCategoryIds(categoryIds: string[]) {
+  if (!categoryIds.length) {
+    return new Map<string, number>();
+  }
+
+  const objectIds = categoryIds
+    .filter((id) => Types.ObjectId.isValid(id))
+    .map((id) => new Types.ObjectId(id));
+
+  const rows = await Item.aggregate<{
+    _id: { toString(): string };
+    count: number;
+  }>([
+    {
+      $match: {
+        categoryId: {
+          $in: objectIds,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$categoryId",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const counts = new Map<string, number>();
+
+  for (const row of rows) {
+    counts.set(row._id.toString(), row.count);
+  }
+
+  return counts;
+}
+
+async function getCategoryItemsPage(
+  categoryId: string,
+  offset: number,
+  limit: number,
+  options?: { currentUserId?: string; isSharedCategory?: boolean },
+): Promise<PaginatedItemsData> {
+  const [items, total] = await Promise.all([
+    Item.find({ categoryId })
+      .sort({ updatedAt: -1, _id: -1 })
+      .skip(offset)
+      .limit(limit)
+      .lean(),
+    Item.countDocuments({ categoryId }),
+  ]);
+
+  const safeOffset = Math.max(0, Math.min(offset, Math.max(total - 1, 0)));
+  const from = total === 0 ? 0 : safeOffset;
+  const to = total === 0 ? 0 : Math.min(safeOffset + limit - 1, total - 1);
+
+  return {
+    items: items.map((item) => serializeItem(item, options)),
+    total,
+    offset,
+    limit,
+    range: {
+      from,
+      to,
+    },
+    hasMore: offset + items.length < total,
   };
 }
 
@@ -150,12 +145,12 @@ export async function ensureDefaultPersonalCategories(userId: string) {
   }
 
   await Category.insertMany(
-    DEFAULT_PERSONAL_CATEGORIES.map((name) => ({
-      name,
+    DEFAULT_PERSONAL_CATEGORIES.map((category) => ({
+      name: category.name,
+      emoji: category.emoji,
       scope: "personal",
       ownerId: userId,
       createdBy: userId,
-      items: [],
     })),
   );
 }
@@ -192,10 +187,22 @@ export async function getDashboardDataByEmail(
       : Promise.resolve([]),
   ]);
 
+  const allCategoryIds = [...personalCategories, ...sharedCategories].map((category) =>
+    category._id.toString(),
+  );
+
+  await migrateLegacyItemsForCategories(allCategoryIds);
+
+  const itemCounts = await getItemCountsByCategoryIds(allCategoryIds);
+
   return {
     user,
-    personalCategories: personalCategories.map(serializeCategory),
-    sharedCategories: sharedCategories.map(serializeCategory),
+    personalCategories: personalCategories.map((category) =>
+      serializeCategory(category, itemCounts.get(category._id.toString()) ?? 0),
+    ),
+    sharedCategories: sharedCategories.map((category) =>
+      serializeCategory(category, itemCounts.get(category._id.toString()) ?? 0),
+    ),
   };
 }
 
@@ -215,20 +222,23 @@ export async function getCategoryDataByEmail(email: string, categoryId: string) 
     return null;
   }
 
-  const ownerId = category.ownerId ? category.ownerId.toString() : null;
-  const connectionKey = category.connectionKey ?? null;
-  const canReadPersonal = category.scope === "personal" && ownerId === user.id;
-  const canReadShared =
-    category.scope === "shared" &&
-    Boolean(connectionKey) &&
-    user.connections.includes(connectionKey);
-
-  if (!canReadPersonal && !canReadShared) {
+  if (!canAccessCategory(category, user.id, user.connections)) {
     return null;
   }
 
+  await migrateLegacyItemsForCategory(categoryId);
+
+  const [itemsCount, firstPage] = await Promise.all([
+    Item.countDocuments({ categoryId }),
+    getCategoryItemsPage(categoryId, 0, 50, {
+      currentUserId: user.id,
+      isSharedCategory: category.scope === "shared",
+    }),
+  ]);
+
   return {
     user,
-    category: serializeCategory(category),
+    category: serializeCategory(category, itemsCount),
+    firstPage,
   };
 }

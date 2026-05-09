@@ -23,5 +23,11 @@ export default async function CategoryPage({
     notFound();
   }
 
-  return <CategoryPageShell user={data.user} category={data.category} />;
+  return (
+    <CategoryPageShell
+      user={data.user}
+      category={data.category}
+      firstPage={data.firstPage}
+    />
+  );
 }

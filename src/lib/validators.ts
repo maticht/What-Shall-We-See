@@ -1,10 +1,25 @@
 import type { CategoryScope, MediaStatus } from "@/types/app";
+import { DEFAULT_CATEGORY_EMOJI } from "@/lib/constants";
 import { normalizeConnectionKey } from "@/lib/utils";
 
 const STATUS_VALUES: MediaStatus[] = ["planned", "in_progress", "done"];
 
 function asString(value: unknown) {
   return typeof value === "string" ? value : "";
+}
+
+function parsePositiveInt(value: string, fallback: number, min = 0) {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+
+  if (!Number.isFinite(parsed) || Number.isNaN(parsed)) {
+    return fallback;
+  }
+
+  return Math.max(min, parsed);
 }
 
 function parseHttpUrl(value: string) {
@@ -39,11 +54,13 @@ export function parseConnectionKey(value: unknown) {
 
 export function parseCategoryPayload(payload: unknown): {
   name: string;
+  emoji: string;
   scope: CategoryScope;
   connectionKey: string | null;
 } {
   const data = typeof payload === "object" && payload !== null ? payload : {};
   const name = asString((data as { name?: unknown }).name).trim();
+  const emoji = asString((data as { emoji?: unknown }).emoji).trim();
   const scope = asString((data as { scope?: unknown }).scope) as CategoryScope;
   const rawConnectionKey = (data as { connectionKey?: unknown }).connectionKey;
 
@@ -55,8 +72,13 @@ export function parseCategoryPayload(payload: unknown): {
     throw new Error("Category scope must be personal or shared.");
   }
 
+  if (emoji.length > 32) {
+    throw new Error("Category emoji is too long.");
+  }
+
   return {
     name,
+    emoji: emoji || DEFAULT_CATEGORY_EMOJI,
     scope,
     connectionKey: scope === "shared" ? parseConnectionKey(rawConnectionKey) : null,
   };
@@ -65,12 +87,17 @@ export function parseCategoryPayload(payload: unknown): {
 export function parseCategoryPatchPayload(payload: unknown) {
   const data = typeof payload === "object" && payload !== null ? payload : {};
   const name = asString((data as { name?: unknown }).name).trim();
+  const emoji = asString((data as { emoji?: unknown }).emoji).trim();
 
   if (name.length < 2 || name.length > 48) {
     throw new Error("Category name must be between 2 and 48 characters.");
   }
 
-  return { name };
+  if (emoji.length > 32) {
+    throw new Error("Category emoji is too long.");
+  }
+
+  return { name, emoji: emoji || DEFAULT_CATEGORY_EMOJI };
 }
 
 export function parseItemPayload(payload: unknown): {
@@ -110,5 +137,25 @@ export function parseItemPayload(payload: unknown): {
     status,
     imageUrl,
     rating,
+  };
+}
+
+export function parseItemPagination(searchParams: URLSearchParams) {
+  const limit = Math.min(parsePositiveInt(searchParams.get("limit") ?? "", 50, 1), 100);
+  const offset = parsePositiveInt(searchParams.get("offset") ?? "", 0, 0);
+  const range = asString(searchParams.get("range")).trim();
+
+  if (!range) {
+    return { offset, limit };
+  }
+
+  const [fromRaw, toRaw] = range.split(/[:-]/, 2);
+  const from = parsePositiveInt(fromRaw ?? "", offset, 0);
+  const to = parsePositiveInt(toRaw ?? "", from + limit - 1, from);
+  const rangeLimit = Math.max(1, to - from + 1);
+
+  return {
+    offset: from,
+    limit: Math.min(rangeLimit, 100),
   };
 }

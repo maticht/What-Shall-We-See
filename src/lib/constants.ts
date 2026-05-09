@@ -1,11 +1,13 @@
-import type { MediaStatus } from "@/types/app";
+﻿import type { MediaStatus } from "@/types/app";
+
+export const DEFAULT_CATEGORY_EMOJI = "📁";
 
 export const DEFAULT_PERSONAL_CATEGORIES = [
-  "Movies",
-  "Series",
-  "Books",
-  "Manga",
-  "Manhwa",
+  { name: "Movies", emoji: "🎬" },
+  { name: "Series", emoji: "📺" },
+  { name: "Books", emoji: "📚" },
+  { name: "Manga", emoji: "✨" },
+  { name: "Manhwa", emoji: "🌙" },
 ] as const;
 
 export const STATUS_OPTIONS: Array<{

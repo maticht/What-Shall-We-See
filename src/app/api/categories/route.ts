@@ -49,13 +49,13 @@ export async function POST(request: Request) {
 
     const category = await Category.create({
       name: payload.name,
+      emoji: payload.emoji,
       scope: payload.scope,
       ownerId: payload.scope === "personal" ? user._id : null,
       connectionKey: payload.scope === "shared" ? payload.connectionKey : null,
       createdBy: user._id,
       lastEditedByName: user.name,
       lastEditedByEmail: user.email,
-      items: [],
     });
 
     return NextResponse.json({ id: category._id.toString() }, { status: 201 });

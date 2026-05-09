@@ -15,6 +15,7 @@ interface CustomSelectProps {
   options: CustomSelectOption[];
   placeholder?: string;
   disabled?: boolean;
+  blurBackdrop?: boolean;
   onChange: (value: string) => void;
 }
 
@@ -23,6 +24,7 @@ export function CustomSelect({
   options,
   placeholder = "Select an option",
   disabled = false,
+  blurBackdrop = false,
   onChange,
 }: CustomSelectProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -80,55 +82,60 @@ export function CustomSelect({
       </button>
 
       {open && !disabled ? (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--panel)] p-1.5 shadow-[0_18px_56px_rgba(20,20,20,0.14)] backdrop-blur-xl">
-          <div className="grid gap-1">
-            {options.map((option) => {
-              const isSelected = option.value === value;
+        <>
+          {blurBackdrop ? (
+            <div className="fixed inset-0 z-40 bg-stone-950/10 backdrop-blur-sm" />
+          ) : null}
+          <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--panel)] p-1.5 shadow-[0_18px_56px_rgba(20,20,20,0.14)] backdrop-blur-xl">
+            <div className="grid gap-1">
+              {options.map((option) => {
+                const isSelected = option.value === value;
 
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    "flex items-start justify-between gap-3 rounded-[var(--radius-ui)] px-3 py-2.5 text-left transition",
-                    isSelected
-                      ? "bg-[var(--muted-strong)] text-white"
-                      : "bg-transparent text-stone-100 hover:bg-white/[0.06]",
-                  )}
-                >
-                  <span>
-                    <span className="block text-sm font-semibold">
-                      {option.label}
-                    </span>
-                    {option.description ? (
-                      <span
-                        className={cn(
-                          "mt-1 block text-xs",
-                          isSelected
-                            ? "text-stone-300"
-                            : "text-stone-400",
-                        )}
-                      >
-                        {option.description}
-                      </span>
-                    ) : null}
-                  </span>
-                  <Check
-                    size={16}
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(option.value);
+                      setOpen(false);
+                    }}
                     className={cn(
-                      "mt-0.5 shrink-0",
-                      isSelected ? "opacity-100" : "opacity-0",
+                      "flex items-start justify-between gap-3 rounded-[var(--radius-ui)] px-3 py-2.5 text-left transition",
+                      isSelected
+                        ? "bg-[var(--muted-strong)] text-white"
+                        : "bg-transparent text-stone-100 hover:bg-white/[0.06]",
                     )}
-                  />
-                </button>
-              );
-            })}
+                  >
+                    <span>
+                      <span className="block text-sm font-semibold">
+                        {option.label}
+                      </span>
+                      {option.description ? (
+                        <span
+                          className={cn(
+                            "mt-1 block text-xs",
+                            isSelected
+                              ? "text-stone-300"
+                              : "text-stone-400",
+                          )}
+                        >
+                          {option.description}
+                        </span>
+                      ) : null}
+                    </span>
+                    <Check
+                      size={16}
+                      className={cn(
+                        "mt-0.5 shrink-0",
+                        isSelected ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
     </div>
   );

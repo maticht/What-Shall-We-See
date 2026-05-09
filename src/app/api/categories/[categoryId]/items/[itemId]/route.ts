@@ -1,34 +1,11 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { requireAppUser } from "@/lib/auth-session";
-import Category from "@/models/category";
+import { findAuthorizedCategory } from "@/lib/category-access";
+import { migrateLegacyItemsForCategory } from "@/lib/legacy-items";
 import { parseItemPayload } from "@/lib/validators";
+import Item from "@/models/item";
 
 export const runtime = "nodejs";
-
-async function findAuthorizedCategory(
-  categoryId: string,
-  userId: string,
-  connections: string[],
-) {
-  const category = await Category.findById(categoryId);
-
-  if (!category) {
-    return null;
-  }
-
-  const isPersonalOwner =
-    category.scope === "personal" && category.ownerId?.toString() === userId;
-  const isSharedMember =
-    category.scope === "shared" &&
-    Boolean(category.connectionKey) &&
-    connections.includes(category.connectionKey);
-
-  if (!isPersonalOwner && !isSharedMember) {
-    return undefined;
-  }
-
-  return category;
-}
 
 export async function PATCH(
   request: Request,
@@ -56,26 +33,57 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    await migrateLegacyItemsForCategory(categoryId);
+
     const payload = parseItemPayload(await request.json());
-    const item = category.items.id(itemId);
+    const item = await Item.findOne({ _id: itemId, categoryId: category._id });
 
     if (!item) {
-      return NextResponse.json({ error: "Card not found" }, { status: 404 });
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
-    item.set(payload);
-    item.set({
-      updatedByName: user.name,
-      updatedByEmail: user.email,
-    });
+    item.title = payload.title;
+    item.status = payload.status;
+    item.imageUrl = payload.imageUrl;
+
+    const currentUserId = user._id.toString();
+    const ratings = Array.isArray(item.ratings) ? [...item.ratings] : [];
+    const existingRatingIndex = ratings.findIndex(
+      (entry) => entry.userId?.toString() === currentUserId,
+    );
+
+    if (payload.rating === null) {
+      if (existingRatingIndex >= 0) {
+        ratings.splice(existingRatingIndex, 1);
+      }
+    } else if (existingRatingIndex >= 0) {
+      ratings[existingRatingIndex].value = payload.rating;
+      ratings[existingRatingIndex].updatedByName = user.name;
+      ratings[existingRatingIndex].updatedByEmail = user.email;
+      ratings[existingRatingIndex].updatedAt = new Date();
+    } else {
+      ratings.push({
+        userId: user._id,
+        value: payload.rating,
+        updatedByName: user.name,
+        updatedByEmail: user.email,
+        updatedAt: new Date(),
+      });
+    }
+
+    item.ratings = ratings;
+    item.rating = payload.rating;
+    item.updatedByName = user.name;
+    item.updatedByEmail = user.email;
+    await item.save();
+
     category.lastEditedByName = user.name;
     category.lastEditedByEmail = user.email;
-    category.markModified("items");
     await category.save();
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to update card.";
+    const message = error instanceof Error ? error.message : "Unable to update item.";
 
     return NextResponse.json({ error: message }, { status: 400 });
   }
@@ -106,16 +114,16 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const item = category.items.id(itemId);
+  await migrateLegacyItemsForCategory(categoryId);
 
-  if (!item) {
-    return NextResponse.json({ error: "Card not found" }, { status: 404 });
+  const deletion = await Item.deleteOne({ _id: itemId, categoryId: category._id });
+
+  if (!deletion.deletedCount) {
+    return NextResponse.json({ error: "Item not found" }, { status: 404 });
   }
 
-  item.deleteOne();
   category.lastEditedByName = user.name;
   category.lastEditedByEmail = user.email;
-  category.markModified("items");
   await category.save();
 
   return NextResponse.json({ ok: true });

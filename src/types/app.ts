@@ -4,10 +4,14 @@ export type MediaStatus = "planned" | "in_progress" | "done";
 
 export interface MediaItemData {
   id: string;
+  categoryId: string;
   title: string;
   status: MediaStatus;
   imageUrl: string;
   rating: number | null;
+  myRating: number | null;
+  partnerRating: number | null;
+  partnerLabel: string | null;
   updatedByName: string | null;
   updatedByEmail: string | null;
   updatedAt: string;
@@ -16,15 +20,28 @@ export interface MediaItemData {
 export interface CategoryData {
   id: string;
   name: string;
+  emoji: string;
   scope: CategoryScope;
   connectionKey: string | null;
   ownerId: string | null;
   createdBy: string;
   lastEditedByName: string | null;
   lastEditedByEmail: string | null;
-  items: MediaItemData[];
+  itemsCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PaginatedItemsData {
+  items: MediaItemData[];
+  total: number;
+  offset: number;
+  limit: number;
+  range: {
+    from: number;
+    to: number;
+  };
+  hasMore: boolean;
 }
 
 export interface DashboardUser {
