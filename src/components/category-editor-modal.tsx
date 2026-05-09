@@ -1,7 +1,10 @@
 "use client";
 
 import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { CustomSelect } from "@/components/custom-select";
+import { Button } from "@/components/ui/button";
+import { FieldLabel } from "@/components/ui/field-label";
+import { Input } from "@/components/ui/input";
 
 export interface CategoryEditorValue {
   mode: "create" | "edit";
@@ -35,16 +38,33 @@ export function CategoryEditorModal({
   }
 
   const isShared = value.scope === "shared";
+  const scopeOptions = [
+    {
+      value: "personal",
+      label: "Personal",
+      description: "Visible only in your private library.",
+    },
+    {
+      value: "shared",
+      label: "Shared",
+      description: "Visible to everyone with this connection code.",
+    },
+  ];
+  const connectionOptions = connections.map((connection) => ({
+    value: connection,
+    label: connection,
+    description: "Shared workspace access key.",
+  }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/45 p-4 backdrop-blur-sm sm:items-center">
-      <div className="w-full max-w-lg rounded-[28px] border border-black/10 bg-[var(--panel)] p-6 shadow-[0_30px_90px_rgba(20,20,20,0.22)] dark:border-white/10">
-        <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-4 backdrop-blur-sm sm:items-center">
+      <div className="w-full max-w-lg rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--panel)] p-5 shadow-[0_18px_56px_rgba(20,20,20,0.18)]">
+        <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-stone-500 dark:text-stone-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
               {value.mode === "create" ? "New category" : "Edit category"}
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-stone-950 dark:text-white">
+            <h2 className="mt-2 text-xl font-semibold text-stone-950 dark:text-white">
               {value.mode === "create"
                 ? "Shape a new shelf"
                 : "Refine this category"}
@@ -53,7 +73,7 @@ export function CategoryEditorModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-black/10 text-stone-500 transition hover:text-stone-950 dark:border-white/10 dark:text-stone-400 dark:hover:text-white"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-ui)] border border-[var(--line)] text-stone-500 transition hover:text-stone-950 dark:text-stone-400 dark:hover:text-white"
             aria-label="Close category editor"
           >
             <X size={18} />
@@ -68,100 +88,76 @@ export function CategoryEditorModal({
           }}
         >
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-stone-700 dark:text-stone-200">
-              Category name
-            </span>
-            <input
+            <FieldLabel>Category name</FieldLabel>
+            <Input
               value={value.name}
               onChange={(event) =>
                 onChange({ ...value, name: event.target.value })
               }
               placeholder="Weekend movies"
-              className="w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-stone-950 outline-none transition focus:border-stone-950 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-white"
             />
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-stone-700 dark:text-stone-200">
-                Scope
-              </span>
-              <select
+              <FieldLabel>Scope</FieldLabel>
+              <CustomSelect
                 value={value.scope}
                 disabled={value.mode === "edit"}
-                onChange={(event) =>
+                onChange={(nextScope) =>
                   onChange({
                     ...value,
-                    scope: event.target.value as "personal" | "shared",
+                    scope: nextScope as "personal" | "shared",
                     connectionKey:
-                      event.target.value === "shared"
+                      nextScope === "shared"
                         ? value.connectionKey || connections[0] || ""
                         : "",
                   })
                 }
-                className={cn(
-                  "w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-stone-950 outline-none transition focus:border-stone-950 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-white",
-                  value.mode === "edit" && "cursor-not-allowed opacity-70",
-                )}
-              >
-                <option value="personal">Personal</option>
-                <option value="shared">Shared</option>
-              </select>
+                options={scopeOptions}
+              />
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-stone-700 dark:text-stone-200">
-                Connection
-              </span>
-              <select
+              <FieldLabel>Connection</FieldLabel>
+              <CustomSelect
                 value={value.connectionKey}
                 disabled={!isShared || connections.length === 0 || value.mode === "edit"}
-                onChange={(event) =>
-                  onChange({ ...value, connectionKey: event.target.value })
+                onChange={(connectionKey) =>
+                  onChange({ ...value, connectionKey })
                 }
-                className={cn(
-                  "w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-stone-950 outline-none transition focus:border-stone-950 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-white",
-                  (!isShared || connections.length === 0 || value.mode === "edit") &&
-                    "cursor-not-allowed opacity-70",
-                )}
-              >
-                {connections.length ? (
-                  connections.map((connection) => (
-                    <option key={connection} value={connection}>
-                      {connection}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">No shared connection yet</option>
-                )}
-              </select>
+                options={
+                  connectionOptions.length
+                    ? connectionOptions
+                    : [
+                        {
+                          value: "",
+                          label: "No shared connection yet",
+                          description: "Add a connection code first.",
+                        },
+                      ]
+                }
+                placeholder="Choose connection"
+              />
             </label>
           </div>
 
-          <div className="rounded-2xl border border-dashed border-black/10 bg-stone-50/80 p-4 text-sm text-stone-600 dark:border-white/10 dark:bg-white/[0.03] dark:text-stone-300">
+          <div className="rounded-[var(--radius-panel)] border border-dashed border-[var(--line)] bg-[var(--muted)] p-3 text-sm text-stone-600 dark:text-stone-300">
             Personal categories belong only to you. Shared categories are visible
             to everyone using the same connection code.
           </div>
 
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-black/10 px-4 py-2 text-sm font-medium text-stone-700 transition hover:text-stone-950 dark:border-white/10 dark:text-stone-300 dark:hover:text-white"
-            >
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
+            <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={pending}
-              className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-stone-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-70 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
-            >
+            </Button>
+            <Button type="submit" variant="primary" disabled={pending}>
               {pending
                 ? "Saving..."
                 : value.mode === "create"
                   ? "Create category"
                   : "Save changes"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

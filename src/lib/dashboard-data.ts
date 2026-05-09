@@ -27,6 +27,8 @@ function serializeItem(item: {
   status: MediaItemData["status"];
   imageUrl: string;
   rating?: number | null;
+  updatedByName?: string | null;
+  updatedByEmail?: string | null;
   updatedAt?: Date | string;
   createdAt?: Date | string;
 }): MediaItemData {
@@ -36,6 +38,8 @@ function serializeItem(item: {
     status: item.status,
     imageUrl: item.imageUrl,
     rating: item.rating ?? null,
+    updatedByName: item.updatedByName ?? null,
+    updatedByEmail: item.updatedByEmail ?? null,
     updatedAt: toIso(item.updatedAt ?? item.createdAt),
   };
 }
@@ -47,12 +51,16 @@ function serializeCategory(category: {
   connectionKey?: string | null;
   ownerId?: { toString(): string } | null;
   createdBy: { toString(): string };
+  lastEditedByName?: string | null;
+  lastEditedByEmail?: string | null;
   items?: Array<{
     _id: { toString(): string };
     title: string;
     status: MediaItemData["status"];
     imageUrl: string;
     rating?: number | null;
+    updatedByName?: string | null;
+    updatedByEmail?: string | null;
     updatedAt?: Date | string;
     createdAt?: Date | string;
   }>;
@@ -70,6 +78,8 @@ function serializeCategory(category: {
     connectionKey: category.connectionKey ?? null,
     ownerId: category.ownerId ? category.ownerId.toString() : null,
     createdBy: category.createdBy.toString(),
+    lastEditedByName: category.lastEditedByName ?? null,
+    lastEditedByEmail: category.lastEditedByEmail ?? null,
     items,
     createdAt: toIso(category.createdAt),
     updatedAt: toIso(category.updatedAt),
@@ -186,5 +196,39 @@ export async function getDashboardDataByEmail(
     user,
     personalCategories: personalCategories.map(serializeCategory),
     sharedCategories: sharedCategories.map(serializeCategory),
+  };
+}
+
+export async function getCategoryDataByEmail(email: string, categoryId: string) {
+  await connectToDatabase();
+
+  const userDocument = await User.findOne({ email: email.toLowerCase() }).lean();
+
+  if (!userDocument) {
+    return null;
+  }
+
+  const user = serializeUser(userDocument);
+  const category = await Category.findById(categoryId).lean();
+
+  if (!category) {
+    return null;
+  }
+
+  const ownerId = category.ownerId ? category.ownerId.toString() : null;
+  const connectionKey = category.connectionKey ?? null;
+  const canReadPersonal = category.scope === "personal" && ownerId === user.id;
+  const canReadShared =
+    category.scope === "shared" &&
+    Boolean(connectionKey) &&
+    user.connections.includes(connectionKey);
+
+  if (!canReadPersonal && !canReadShared) {
+    return null;
+  }
+
+  return {
+    user,
+    category: serializeCategory(category),
   };
 }

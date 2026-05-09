@@ -64,6 +64,12 @@ export async function PATCH(
     }
 
     item.set(payload);
+    item.set({
+      updatedByName: user.name,
+      updatedByEmail: user.email,
+    });
+    category.lastEditedByName = user.name;
+    category.lastEditedByEmail = user.email;
     category.markModified("items");
     await category.save();
 
@@ -107,6 +113,8 @@ export async function DELETE(
   }
 
   item.deleteOne();
+  category.lastEditedByName = user.name;
+  category.lastEditedByEmail = user.email;
   category.markModified("items");
   await category.save();
 

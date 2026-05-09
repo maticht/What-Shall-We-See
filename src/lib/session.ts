@@ -25,6 +25,10 @@ function getSessionSecret() {
 }
 
 function shouldUseSecureCookies() {
+  if (process.env.NODE_ENV !== "production") {
+    return false;
+  }
+
   const authBaseUrl = process.env.NEXTAUTH_URL ?? process.env.AUTH_URL ?? "";
   return authBaseUrl.startsWith("https://") || process.env.VERCEL === "1";
 }

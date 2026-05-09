@@ -59,6 +59,8 @@ export async function PATCH(
     const payload = parseCategoryPatchPayload(await request.json());
 
     category.name = payload.name;
+    category.lastEditedByName = user.name;
+    category.lastEditedByEmail = user.email;
     await category.save();
 
     return NextResponse.json({ ok: true });

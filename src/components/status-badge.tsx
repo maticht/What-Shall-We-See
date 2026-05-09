@@ -13,7 +13,7 @@ export function StatusBadge({ status }: { status: MediaStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.18em] uppercase",
+        "inline-flex items-center rounded-[var(--radius-ui)] border px-2.5 py-1 text-[11px] font-semibold tracking-[0.14em] uppercase",
         toneMap[status],
       )}
     >

@@ -7,7 +7,7 @@ A responsive Next.js app for tracking movies, series, books, manga, and manhwa w
 - card statuses: planned, in progress, done
 - personal ratings and remote cover image URLs
 - connection codes that unlock collaborative categories
-- light and dark themes with a Notion-inspired interface
+- a restrained dark interface with consistent controls
 
 ## Stack
 
@@ -15,7 +15,7 @@ A responsive Next.js app for tracking movies, series, books, manga, and manhwa w
 - React 19
 - Tailwind CSS 4
 - MongoDB with Mongoose
-- NextAuth with Google provider
+- Google Identity Services + custom session cookie
 
 ## Environment Variables
 
@@ -40,13 +40,16 @@ If you use only `AUTH_SECRET`, that is fine. `NEXTAUTH_SECRET` is also supported
 
 ## Google OAuth Setup
 
-Create OAuth credentials in Google Cloud and add this callback URL:
+Create OAuth credentials in Google Cloud and add these browser origins:
 
 ```text
-http://localhost:3000/api/auth/callback/google
+http://localhost
+http://localhost:3000
+https://what-shall-we-see.vercel.app
 ```
 
-For production, add your real domain callback too.
+This app uses Google Identity Services on the client, so the important Google
+setting is `Authorized JavaScript origins`.
 
 ## Local Development
 
@@ -59,12 +62,22 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-If you want local development to use the same Vercel secrets, link the project and pull the development envs:
+If you want local development to use the same Vercel secrets, link the project
+and pull the envs:
 
 ```bash
 vercel link
 vercel env pull .env.local --environment=development --yes
 ```
+
+If your secrets currently exist only in `Preview` and `Production`, either:
+
+```bash
+vercel env pull .env.local --environment=preview --yes
+```
+
+or add the same variables to the `Development` environment in Vercel so
+`localhost` uses them directly.
 
 ## Production Check
 

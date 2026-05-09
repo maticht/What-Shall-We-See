@@ -8,6 +8,8 @@ export interface MediaItemData {
   status: MediaStatus;
   imageUrl: string;
   rating: number | null;
+  updatedByName: string | null;
+  updatedByEmail: string | null;
   updatedAt: string;
 }
 
@@ -18,6 +20,8 @@ export interface CategoryData {
   connectionKey: string | null;
   ownerId: string | null;
   createdBy: string;
+  lastEditedByName: string | null;
+  lastEditedByEmail: string | null;
   items: MediaItemData[];
   createdAt: string;
   updatedAt: string;

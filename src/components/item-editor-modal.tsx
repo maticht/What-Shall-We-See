@@ -1,8 +1,12 @@
 "use client";
 
 import { X } from "lucide-react";
+import { CustomSelect } from "@/components/custom-select";
 import { STATUS_OPTIONS } from "@/lib/constants";
 import type { MediaStatus } from "@/types/app";
+import { Button } from "@/components/ui/button";
+import { FieldLabel } from "@/components/ui/field-label";
+import { Input } from "@/components/ui/input";
 
 export interface ItemEditorValue {
   mode: "create" | "edit";
@@ -36,22 +40,28 @@ export function ItemEditorModal({
     return null;
   }
 
+  const statusOptions = STATUS_OPTIONS.map((option) => ({
+    value: option.value,
+    label: option.label,
+    description: option.description,
+  }));
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/45 p-4 backdrop-blur-sm sm:items-center">
-      <div className="w-full max-w-2xl rounded-[28px] border border-black/10 bg-[var(--panel)] p-6 shadow-[0_30px_90px_rgba(20,20,20,0.22)] dark:border-white/10">
-        <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-4 backdrop-blur-sm sm:items-center">
+      <div className="w-full max-w-2xl rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--panel)] p-5 shadow-[0_18px_56px_rgba(20,20,20,0.18)]">
+        <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-stone-500 dark:text-stone-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
               {value.mode === "create" ? "New card" : "Edit card"}
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-stone-950 dark:text-white">
+            <h2 className="mt-2 text-xl font-semibold text-stone-950 dark:text-white">
               {value.categoryName}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-black/10 text-stone-500 transition hover:text-stone-950 dark:border-white/10 dark:text-stone-400 dark:hover:text-white"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-ui)] border border-[var(--line)] text-stone-500 transition hover:text-stone-950 dark:text-stone-400 dark:hover:text-white"
             aria-label="Close card editor"
           >
             <X size={18} />
@@ -66,44 +76,31 @@ export function ItemEditorModal({
           }}
         >
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-stone-700 dark:text-stone-200">
-              Title
-            </span>
-            <input
+            <FieldLabel>Title</FieldLabel>
+            <Input
               value={value.title}
               onChange={(event) =>
                 onChange({ ...value, title: event.target.value })
               }
               placeholder="The Left Hand of Darkness"
-              className="w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-stone-950 outline-none transition focus:border-stone-950 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-white"
             />
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-stone-700 dark:text-stone-200">
-                Status
-              </span>
-              <select
+              <FieldLabel>Status</FieldLabel>
+              <CustomSelect
                 value={value.status}
-                onChange={(event) =>
-                  onChange({ ...value, status: event.target.value as MediaStatus })
+                onChange={(status) =>
+                  onChange({ ...value, status: status as MediaStatus })
                 }
-                className="w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-stone-950 outline-none transition focus:border-stone-950 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-white"
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                options={statusOptions}
+              />
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-stone-700 dark:text-stone-200">
-                Rating
-              </span>
-              <input
+              <FieldLabel>Rating</FieldLabel>
+              <Input
                 type="number"
                 min="0"
                 max="10"
@@ -113,64 +110,32 @@ export function ItemEditorModal({
                   onChange({ ...value, rating: event.target.value })
                 }
                 placeholder="8.5"
-                className="w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-stone-950 outline-none transition focus:border-stone-950 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-white"
               />
             </label>
           </div>
 
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-stone-700 dark:text-stone-200">
-              Image URL
-            </span>
-            <input
+            <FieldLabel>Image URL</FieldLabel>
+            <Input
               value={value.imageUrl}
               onChange={(event) =>
                 onChange({ ...value, imageUrl: event.target.value })
               }
               placeholder="https://images.unsplash.com/..."
-              className="w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-stone-950 outline-none transition focus:border-stone-950 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-white"
             />
           </label>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            {STATUS_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() =>
-                  onChange({ ...value, status: option.value })
-                }
-                className={`rounded-2xl border px-4 py-3 text-left transition ${
-                  value.status === option.value
-                    ? "border-stone-950 bg-stone-950 text-white dark:border-white dark:bg-white dark:text-stone-950"
-                    : "border-black/10 bg-stone-50/80 text-stone-700 hover:border-black/15 dark:border-white/10 dark:bg-white/[0.03] dark:text-stone-300"
-                }`}
-              >
-                <p className="text-sm font-semibold">{option.label}</p>
-                <p className="mt-1 text-xs opacity-75">{option.description}</p>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-black/10 px-4 py-2 text-sm font-medium text-stone-700 transition hover:text-stone-950 dark:border-white/10 dark:text-stone-300 dark:hover:text-white"
-            >
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
+            <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={pending}
-              className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-stone-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-70 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
-            >
+            </Button>
+            <Button type="submit" variant="primary" disabled={pending}>
               {pending
                 ? "Saving..."
                 : value.mode === "create"
                   ? "Create card"
                   : "Save changes"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

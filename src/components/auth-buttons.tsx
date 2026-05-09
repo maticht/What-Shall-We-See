@@ -1,9 +1,10 @@
 "use client";
 
-import { LoaderCircle, LogOut } from "lucide-react";
+import { LoaderCircle, LogIn, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const GOOGLE_SCRIPT_ID = "google-identity-services";
 
@@ -23,9 +24,7 @@ function loadGoogleScript() {
       existing.addEventListener(
         "error",
         () => reject(new Error("Failed to load Google script.")),
-        {
-          once: true,
-        },
+        { once: true },
       );
       return;
     }
@@ -48,27 +47,6 @@ export function SignInButton({ className }: { className?: string }) {
   const [localError, setLocalError] = useState("");
   const [rendered, setRendered] = useState(false);
   const [buttonWidth, setButtonWidth] = useState(300);
-  const [buttonTheme, setButtonTheme] = useState<"outline" | "filled_black">(
-    "outline",
-  );
-
-  useEffect(() => {
-    const root = document.documentElement;
-
-    const syncTheme = () => {
-      setButtonTheme(root.classList.contains("dark") ? "filled_black" : "outline");
-    };
-
-    syncTheme();
-
-    const observer = new MutationObserver(syncTheme);
-    observer.observe(root, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     const node = wrapperRef.current;
@@ -81,7 +59,7 @@ export function SignInButton({ className }: { className?: string }) {
       const width = Math.floor(node.getBoundingClientRect().width);
 
       if (width > 0) {
-        setButtonWidth(Math.max(240, Math.min(420, width)));
+        setButtonWidth(Math.max(240, Math.min(400, width)));
       }
     };
 
@@ -89,7 +67,6 @@ export function SignInButton({ className }: { className?: string }) {
 
     if (typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", syncWidth);
-
       return () => window.removeEventListener("resize", syncWidth);
     }
 
@@ -160,9 +137,7 @@ export function SignInButton({ className }: { className?: string }) {
               router.refresh();
             } catch (error) {
               setLocalError(
-                error instanceof Error
-                  ? error.message
-                  : "Google sign-in failed.",
+                error instanceof Error ? error.message : "Google sign-in failed.",
               );
             }
           },
@@ -170,9 +145,9 @@ export function SignInButton({ className }: { className?: string }) {
 
         buttonRef.current.innerHTML = "";
         google.accounts.id.renderButton(buttonRef.current, {
-          theme: buttonTheme,
+          theme: "filled_black",
           size: "large",
-          shape: "pill",
+          shape: "rectangular",
           text: "signin_with",
           locale: "en",
           width: buttonWidth,
@@ -193,11 +168,31 @@ export function SignInButton({ className }: { className?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [buttonTheme, buttonWidth, router]);
+  }, [buttonWidth, router]);
 
   return (
-    <div ref={wrapperRef} className={cn("w-full max-w-[420px]", className)}>
-      <div ref={buttonRef} className="min-h-12" />
+    <div ref={wrapperRef} className={cn("w-full max-w-[360px]", className)}>
+      <div className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--card)] px-3 py-3 shadow-sm">
+        <div className="mb-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
+            Sign in
+          </p>
+          <p className="mt-1 text-sm font-medium text-stone-800 dark:text-stone-100">
+            Open your personal and shared library.
+          </p>
+        </div>
+
+        <div className="relative h-11 overflow-hidden rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted-strong)]">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 text-sm font-semibold text-white">
+            <LogIn size={16} />
+            Continue with Google
+          </div>
+          <div
+            ref={buttonRef}
+            className="google-signin-shell absolute inset-0 z-10 flex items-center justify-center overflow-hidden opacity-[0.01]"
+          />
+        </div>
+      </div>
 
       {!rendered && !localError ? (
         <div className="mt-3 inline-flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
@@ -220,8 +215,9 @@ export function SignOutButton() {
   const [pending, startTransition] = useTransition();
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="md"
       onClick={() =>
         startTransition(async () => {
           await fetch("/api/auth/logout", {
@@ -231,7 +227,6 @@ export function SignOutButton() {
           router.refresh();
         })
       }
-      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white/80 px-4 py-2 text-sm font-medium text-stone-700 transition hover:-translate-y-0.5 hover:border-black/15 hover:text-stone-950 dark:border-white/10 dark:bg-white/5 dark:text-stone-200 dark:hover:border-white/20 dark:hover:text-white"
       disabled={pending}
     >
       {pending ? (
@@ -240,6 +235,6 @@ export function SignOutButton() {
         <LogOut size={16} />
       )}
       {pending ? "Signing out..." : "Sign out"}
-    </button>
+    </Button>
   );
 }

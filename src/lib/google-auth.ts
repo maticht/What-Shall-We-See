@@ -1,6 +1,3 @@
-const googleClientId =
-  process.env.AUTH_GOOGLE_ID ?? process.env.GOOGLE_CLIENT_ID ?? "";
-
 export interface VerifiedGoogleProfile {
   googleId: string;
   email: string;
@@ -9,12 +6,14 @@ export interface VerifiedGoogleProfile {
 }
 
 export function getGoogleClientId() {
-  return googleClientId;
+  return process.env.AUTH_GOOGLE_ID ?? process.env.GOOGLE_CLIENT_ID ?? "";
 }
 
 export async function verifyGoogleCredential(
   credential: string,
 ): Promise<VerifiedGoogleProfile> {
+  const googleClientId = getGoogleClientId();
+
   if (!googleClientId) {
     throw new Error("Google client ID is not configured.");
   }

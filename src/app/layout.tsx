@@ -29,7 +29,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${manrope.variable} ${ibmPlexMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full">
         <Providers>{children}</Providers>

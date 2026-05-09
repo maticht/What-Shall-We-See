@@ -13,7 +13,7 @@ declare global {
             options: {
               theme?: "outline" | "filled_black";
               size?: "large";
-              shape?: "pill";
+              shape?: "pill" | "rectangular";
               text?: "signin_with";
               locale?: string;
               width?: number;

@@ -58,7 +58,13 @@ export async function POST(
 
     const payload = parseItemPayload(await request.json());
 
-    category.items.push(payload);
+    category.items.push({
+      ...payload,
+      updatedByName: user.name,
+      updatedByEmail: user.email,
+    });
+    category.lastEditedByName = user.name;
+    category.lastEditedByEmail = user.email;
     await category.save();
 
     return NextResponse.json({ ok: true }, { status: 201 });

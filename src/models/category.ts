@@ -21,6 +21,14 @@ const itemSchema = new Schema(
       type: Number,
       default: null,
     },
+    updatedByName: {
+      type: String,
+      default: null,
+    },
+    updatedByEmail: {
+      type: String,
+      default: null,
+    },
   },
   {
     _id: true,
@@ -55,6 +63,14 @@ const categorySchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    lastEditedByName: {
+      type: String,
+      default: null,
+    },
+    lastEditedByEmail: {
+      type: String,
+      default: null,
     },
     items: {
       type: [itemSchema],

@@ -53,6 +53,8 @@ export async function POST(request: Request) {
       ownerId: payload.scope === "personal" ? user._id : null,
       connectionKey: payload.scope === "shared" ? payload.connectionKey : null,
       createdBy: user._id,
+      lastEditedByName: user.name,
+      lastEditedByEmail: user.email,
       items: [],
     });
 
