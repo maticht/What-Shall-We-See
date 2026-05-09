@@ -2,10 +2,22 @@ import NextAuth, { getServerSession, type NextAuthOptions } from "next-auth";
 import Google from "next-auth/providers/google";
 import { getAppUserByEmail, upsertOAuthUser } from "@/lib/dashboard-data";
 
+const googleClientId =
+  process.env.AUTH_GOOGLE_ID ?? process.env.GOOGLE_CLIENT_ID ?? "";
+const googleClientSecret =
+  process.env.AUTH_GOOGLE_SECRET ?? process.env.GOOGLE_CLIENT_SECRET ?? "";
+const authSecret =
+  process.env.NEXTAUTH_SECRET ??
+  process.env.AUTH_SECRET ??
+  "development-only-secret";
+const authBaseUrl = process.env.NEXTAUTH_URL ?? process.env.AUTH_URL ?? "";
+const useSecureCookies =
+  authBaseUrl.startsWith("https://") || process.env.VERCEL === "1";
+
 const providers = [
   Google({
-    clientId: process.env.AUTH_GOOGLE_ID ?? "",
-    clientSecret: process.env.AUTH_GOOGLE_SECRET ?? "",
+    clientId: googleClientId,
+    clientSecret: googleClientSecret,
   }),
 ];
 
@@ -42,10 +54,8 @@ async function syncToken(
 }
 
 export const authOptions: NextAuthOptions = {
-  secret:
-    process.env.AUTH_SECRET ??
-    process.env.NEXTAUTH_SECRET ??
-    "development-only-secret",
+  secret: authSecret,
+  useSecureCookies,
   pages: {
     signIn: "/",
   },

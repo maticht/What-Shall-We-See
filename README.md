@@ -24,9 +24,19 @@ Copy `.env.example` to `.env.local` and fill in:
 ```bash
 MONGODB_URI=
 AUTH_SECRET=
+NEXTAUTH_SECRET=
+NEXTAUTH_URL=
 AUTH_GOOGLE_ID=
 AUTH_GOOGLE_SECRET=
 ```
+
+For Vercel production, set:
+
+```bash
+NEXTAUTH_URL=https://your-domain.com
+```
+
+If you use only `AUTH_SECRET`, that is fine. `NEXTAUTH_SECRET` is also supported for compatibility with NextAuth on Vercel.
 
 ## Google OAuth Setup
 
@@ -48,6 +58,13 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+If you want local development to use the same Vercel secrets, link the project and pull the development envs:
+
+```bash
+vercel link
+vercel env pull .env.local --environment=development --yes
+```
 
 ## Production Check
 
