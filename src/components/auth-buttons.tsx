@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { LogIn, LogOut, LoaderCircle } from "lucide-react";
-import { signIn, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { useTransition } from "react";
 import { cn } from "@/lib/utils";
 
@@ -12,25 +13,17 @@ export function SignInButton({
   className?: string;
   label?: string;
 }) {
-  const [pending, startTransition] = useTransition();
-
   return (
-    <button
-      type="button"
-      onClick={() =>
-        startTransition(async () => {
-          await signIn("google", { callbackUrl: "/dashboard" });
-        })
-      }
+    <Link
+      href="/api/auth/signin/google?callbackUrl=%2Fdashboard"
       className={cn(
         "inline-flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-black/10 bg-stone-950 px-5 py-3 text-sm font-semibold text-white shadow-[0_20px_50px_rgba(25,25,25,0.18)] transition hover:-translate-y-0.5 hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/10 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200",
         className,
       )}
-      disabled={pending}
     >
-      {pending ? <LoaderCircle className="animate-spin" size={16} /> : <LogIn size={16} />}
-      {pending ? "Connecting..." : label}
-    </button>
+      <LogIn size={16} />
+      {label}
+    </Link>
   );
 }
 
