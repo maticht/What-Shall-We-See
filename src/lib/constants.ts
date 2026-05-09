@@ -1,6 +1,7 @@
 ﻿import type { MediaStatus } from "@/types/app";
 
 export const DEFAULT_CATEGORY_EMOJI = "📁";
+export const EMPTY_ITEM_IMAGE_VALUE = "__NO_IMAGE__";
 
 export const DEFAULT_PERSONAL_CATEGORIES = [
   { name: "Movies", emoji: "🎬" },

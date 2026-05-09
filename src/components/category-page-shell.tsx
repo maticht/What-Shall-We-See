@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Grid2X2,
   Grid3X3,
+  ImageOff,
   LayoutList,
   Pencil,
   Plus,
@@ -186,29 +187,46 @@ function ItemCard({
   onEdit: () => void;
 }) {
   const isList = viewMode === "list";
+  const isGrid2 = viewMode === "grid2";
 
   return (
     <article className="overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--card)]">
-      <div className={isList ? "grid gap-0 sm:grid-cols-[170px_1fr]" : "grid gap-0"}>
+      <div
+        className={
+          isList
+            ? "grid grid-cols-[118px_1fr] gap-0 sm:grid-cols-[170px_1fr]"
+            : "grid gap-0"
+        }
+      >
         <div
           className={
             isList
-              ? "relative aspect-[4/3] w-full bg-[var(--muted-strong)] sm:aspect-auto sm:min-h-40"
-              : "relative aspect-[4/3] w-full bg-[var(--muted-strong)]"
+              ? "relative h-full min-h-[118px] w-full bg-[var(--muted-strong)] sm:min-h-40"
+              : isGrid2
+                ? "relative aspect-[16/9] w-full bg-[var(--muted-strong)] sm:aspect-[4/3]"
+                : "relative aspect-[4/3] w-full bg-[var(--muted-strong)]"
           }
         >
-          <Image
-            src={item.imageUrl}
-            alt={item.title}
-            fill
-            unoptimized
-            sizes={
-              isList
-                ? "(max-width: 640px) 100vw, 170px"
-                : "(max-width: 768px) 100vw, 50vw"
-            }
-            className="object-cover"
-          />
+          {item.imageUrl ? (
+            <Image
+              src={item.imageUrl}
+              alt={item.title}
+              fill
+              unoptimized
+              sizes={
+                isList
+                  ? "(max-width: 640px) 100vw, 170px"
+                  : "(max-width: 768px) 100vw, 50vw"
+              }
+              className="object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))]">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-ui)] border border-white/20 bg-white/10 text-stone-200">
+                <ImageOff size={18} />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex min-w-0 flex-col justify-between gap-4 p-4">
@@ -270,6 +288,7 @@ export function CategoryPageShell({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [isUnder800, setIsUnder800] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const toastCounter = useRef(0);
@@ -283,6 +302,21 @@ export function CategoryPageShell({
   const isSharedCategory = category.scope === "shared";
   const hasItems = totalItems > 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 799px)");
+    const sync = () => {
+      const nextUnder800 = mediaQuery.matches;
+      setIsUnder800(nextUnder800);
+      if (nextUnder800) {
+        setViewMode((current) => (current === "grid3" ? "grid2" : current));
+      }
+    };
+
+    sync();
+    mediaQuery.addEventListener("change", sync);
+    return () => mediaQuery.removeEventListener("change", sync);
+  }, []);
 
   const pushToast = (tone: ToastMessage["tone"], text: string) => {
     toastCounter.current += 1;
@@ -582,7 +616,7 @@ export function CategoryPageShell({
             </span>
           )}
 
-          <div className="hidden items-center gap-2 sm:flex">
+          <div className="flex items-center gap-2">
             <div className="inline-flex rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--card)] p-1">
               <button
                 type="button"
@@ -611,7 +645,9 @@ export function CategoryPageShell({
               <button
                 type="button"
                 onClick={() => setViewMode("grid3")}
-                className={`inline-flex h-9 items-center gap-2 rounded-[var(--radius-ui)] px-3 text-sm font-medium transition ${
+                className={`${
+                  isUnder800 ? "hidden" : "min-[800px]:inline-flex"
+                } h-9 items-center gap-2 rounded-[var(--radius-ui)] px-3 text-sm font-medium transition ${
                   viewMode === "grid3"
                     ? "bg-[var(--muted-strong)] text-white"
                     : "text-stone-400 hover:text-white"

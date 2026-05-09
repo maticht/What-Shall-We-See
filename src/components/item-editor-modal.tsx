@@ -168,13 +168,13 @@ export function ItemEditorModal({
           </div>
 
           <label className="block space-y-2">
-            <FieldLabel>Image URL</FieldLabel>
+            <FieldLabel>Image URL (optional)</FieldLabel>
             <Input
               value={value.imageUrl}
               onChange={(event) =>
                 onChange({ ...value, imageUrl: event.target.value })
               }
-              placeholder="https://images.unsplash.com/..."
+              placeholder="https://images.unsplash.com/... or leave empty"
             />
           </label>
 

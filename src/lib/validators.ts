@@ -110,7 +110,9 @@ export function parseItemPayload(payload: unknown): {
   const data = typeof payload === "object" && payload !== null ? payload : {};
   const title = asString((data as { title?: unknown }).title).trim();
   const status = asString((data as { status?: unknown }).status) as MediaStatus;
-  const imageUrl = parseHttpUrl(asString((data as { imageUrl?: unknown }).imageUrl).trim());
+  const rawImageUrl = asString((data as { imageUrl?: unknown }).imageUrl).trim();
+  const parsedImageUrl = rawImageUrl ? parseHttpUrl(rawImageUrl) : null;
+  const imageUrl = parsedImageUrl ?? "";
   const rawSourceUrl = asString((data as { sourceUrl?: unknown }).sourceUrl).trim();
   const sourceUrl = rawSourceUrl ? parseHttpUrl(rawSourceUrl) : null;
   const rawRating = (data as { rating?: unknown }).rating;
@@ -127,7 +129,7 @@ export function parseItemPayload(payload: unknown): {
     throw new Error("Card status is invalid.");
   }
 
-  if (!imageUrl) {
+  if (rawImageUrl && !parsedImageUrl) {
     throw new Error("Image URL must be a valid http or https link.");
   }
 

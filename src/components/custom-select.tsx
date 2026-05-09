@@ -175,7 +175,7 @@ export function CustomSelect({
           <span className="sr-only">{selected?.description ?? ""}</span>
         </span>
         <ChevronDown
-          size={16}
+          size={18}
           className={cn(
             "shrink-0 text-stone-400 transition",
             open && "rotate-180",
@@ -223,7 +223,7 @@ export function CustomSelect({
                         ) : null}
                       </span>
                       <Check
-                        size={16}
+                        size={18}
                         className={cn(
                           "shrink-0",
                           isSelected ? "opacity-100" : "opacity-0",

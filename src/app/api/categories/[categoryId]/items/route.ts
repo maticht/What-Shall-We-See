@@ -1,6 +1,7 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { requireAppUser } from "@/lib/auth-session";
 import { findAuthorizedCategory } from "@/lib/category-access";
+import { EMPTY_ITEM_IMAGE_VALUE } from "@/lib/constants";
 import { migrateLegacyItemsForCategory } from "@/lib/legacy-items";
 import { serializeItem } from "@/lib/serializers";
 import { parseItemPagination, parseItemPayload } from "@/lib/validators";
@@ -97,11 +98,12 @@ export async function POST(
     await migrateLegacyItemsForCategory(categoryId);
 
     const payload = parseItemPayload(await request.json());
+    const normalizedImageUrl = payload.imageUrl || EMPTY_ITEM_IMAGE_VALUE;
 
     await Item.create({
       title: payload.title,
       status: payload.status,
-      imageUrl: payload.imageUrl,
+      imageUrl: normalizedImageUrl,
       sourceUrl: payload.sourceUrl,
       rating: payload.rating,
       ratings:
@@ -132,3 +134,4 @@ export async function POST(
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
+

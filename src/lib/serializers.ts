@@ -1,4 +1,4 @@
-﻿import { DEFAULT_CATEGORY_EMOJI } from "@/lib/constants";
+import { DEFAULT_CATEGORY_EMOJI, EMPTY_ITEM_IMAGE_VALUE } from "@/lib/constants";
 import type { CategoryData, MediaItemData } from "@/types/app";
 
 export function toIso(value: unknown) {
@@ -19,7 +19,7 @@ export function serializeItem(
     categoryId: { toString(): string };
     title: string;
     status: MediaItemData["status"];
-    imageUrl: string;
+    imageUrl?: string | null;
     sourceUrl?: string | null;
     rating?: number | null;
     ratings?: Array<{
@@ -64,7 +64,10 @@ export function serializeItem(
     categoryId: item.categoryId.toString(),
     title: item.title,
     status: item.status,
-    imageUrl: item.imageUrl,
+    imageUrl:
+      item.imageUrl && item.imageUrl !== EMPTY_ITEM_IMAGE_VALUE
+        ? item.imageUrl
+        : "",
     sourceUrl: item.sourceUrl ?? null,
     rating: myRating,
     myRating,
@@ -109,3 +112,4 @@ export function serializeCategory(
     updatedAt: toIso(category.updatedAt),
   };
 }
+

@@ -1,6 +1,7 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { requireAppUser } from "@/lib/auth-session";
 import { findAuthorizedCategory } from "@/lib/category-access";
+import { EMPTY_ITEM_IMAGE_VALUE } from "@/lib/constants";
 import { migrateLegacyItemsForCategory } from "@/lib/legacy-items";
 import { parseItemPayload } from "@/lib/validators";
 import Item from "@/models/item";
@@ -44,7 +45,7 @@ export async function PATCH(
 
     item.title = payload.title;
     item.status = payload.status;
-    item.imageUrl = payload.imageUrl;
+    item.imageUrl = payload.imageUrl || EMPTY_ITEM_IMAGE_VALUE;
     item.sourceUrl = payload.sourceUrl;
 
     const currentUserId = user._id.toString();
@@ -133,3 +134,4 @@ export async function DELETE(
 
   return NextResponse.json({ ok: true });
 }
+

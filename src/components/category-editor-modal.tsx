@@ -340,7 +340,7 @@ export function CategoryEditorModal({
                           }}
                           className={`flex h-10 w-full items-center justify-center rounded-[var(--radius-ui)] border text-xl transition sm:h-11 sm:text-2xl ${
                             selected
-                              ? "border-white/30 bg-white/15 shadow-[0_0_0_3px_rgba(255,255,255,0.05)]"
+                              ? "scale-105 border-white/30 bg-white/15 text-[1.45rem] shadow-[0_0_0_3px_rgba(255,255,255,0.05)] sm:text-[1.7rem]"
                               : "border-[var(--line)] bg-[var(--card)] hover:border-white/20 hover:bg-[var(--muted-strong)]"
                           }`}
                           aria-label={`Use ${emoji} emoji`}
