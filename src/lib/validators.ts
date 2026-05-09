@@ -1,0 +1,114 @@
+import type { CategoryScope, MediaStatus } from "@/types/app";
+import { normalizeConnectionKey } from "@/lib/utils";
+
+const STATUS_VALUES: MediaStatus[] = ["planned", "in_progress", "done"];
+
+function asString(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function parseHttpUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+export function parseConnectionKey(value: unknown) {
+  const normalized = normalizeConnectionKey(asString(value));
+
+  if (!normalized) {
+    throw new Error("Connection code is required.");
+  }
+
+  if (!/^[A-Z0-9_-]{3,32}$/.test(normalized)) {
+    throw new Error(
+      "Connection code must be 3-32 characters and use letters, numbers, dashes, or underscores.",
+    );
+  }
+
+  return normalized;
+}
+
+export function parseCategoryPayload(payload: unknown): {
+  name: string;
+  scope: CategoryScope;
+  connectionKey: string | null;
+} {
+  const data = typeof payload === "object" && payload !== null ? payload : {};
+  const name = asString((data as { name?: unknown }).name).trim();
+  const scope = asString((data as { scope?: unknown }).scope) as CategoryScope;
+  const rawConnectionKey = (data as { connectionKey?: unknown }).connectionKey;
+
+  if (name.length < 2 || name.length > 48) {
+    throw new Error("Category name must be between 2 and 48 characters.");
+  }
+
+  if (scope !== "personal" && scope !== "shared") {
+    throw new Error("Category scope must be personal or shared.");
+  }
+
+  return {
+    name,
+    scope,
+    connectionKey: scope === "shared" ? parseConnectionKey(rawConnectionKey) : null,
+  };
+}
+
+export function parseCategoryPatchPayload(payload: unknown) {
+  const data = typeof payload === "object" && payload !== null ? payload : {};
+  const name = asString((data as { name?: unknown }).name).trim();
+
+  if (name.length < 2 || name.length > 48) {
+    throw new Error("Category name must be between 2 and 48 characters.");
+  }
+
+  return { name };
+}
+
+export function parseItemPayload(payload: unknown): {
+  title: string;
+  status: MediaStatus;
+  imageUrl: string;
+  rating: number | null;
+} {
+  const data = typeof payload === "object" && payload !== null ? payload : {};
+  const title = asString((data as { title?: unknown }).title).trim();
+  const status = asString((data as { status?: unknown }).status) as MediaStatus;
+  const imageUrl = parseHttpUrl(asString((data as { imageUrl?: unknown }).imageUrl).trim());
+  const rawRating = (data as { rating?: unknown }).rating;
+  const rating =
+    rawRating === "" || rawRating === null || rawRating === undefined
+      ? null
+      : Number(rawRating);
+
+  if (title.length < 1 || title.length > 120) {
+    throw new Error("Card title must be between 1 and 120 characters.");
+  }
+
+  if (!STATUS_VALUES.includes(status)) {
+    throw new Error("Card status is invalid.");
+  }
+
+  if (!imageUrl) {
+    throw new Error("Image URL must be a valid http or https link.");
+  }
+
+  if (rating !== null && (!Number.isFinite(rating) || rating < 0 || rating > 10)) {
+    throw new Error("Rating must be between 0 and 10.");
+  }
+
+  return {
+    title,
+    status,
+    imageUrl,
+    rating,
+  };
+}
