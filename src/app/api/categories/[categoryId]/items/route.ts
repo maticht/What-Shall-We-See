@@ -102,6 +102,7 @@ export async function POST(
       title: payload.title,
       status: payload.status,
       imageUrl: payload.imageUrl,
+      sourceUrl: payload.sourceUrl,
       rating: payload.rating,
       ratings:
         payload.rating === null

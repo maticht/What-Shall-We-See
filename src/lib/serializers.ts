@@ -20,6 +20,7 @@ export function serializeItem(
     title: string;
     status: MediaItemData["status"];
     imageUrl: string;
+    sourceUrl?: string | null;
     rating?: number | null;
     ratings?: Array<{
       userId?: { toString(): string } | string;
@@ -55,7 +56,7 @@ export function serializeItem(
 
   const fallbackRating = item.rating ?? null;
   const shouldUseLegacyFallback =
-    !options?.isSharedCategory || normalizedRatings.length === 0;
+    !options?.isSharedCategory && normalizedRatings.length === 0;
   const myRating = myRatingEntry?.value ?? (shouldUseLegacyFallback ? fallbackRating : null);
 
   return {
@@ -64,6 +65,7 @@ export function serializeItem(
     title: item.title,
     status: item.status,
     imageUrl: item.imageUrl,
+    sourceUrl: item.sourceUrl ?? null,
     rating: myRating,
     myRating,
     partnerRating: options?.isSharedCategory ? (partnerEntry?.value ?? null) : null,

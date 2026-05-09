@@ -52,6 +52,11 @@ const itemSchema = new Schema(
       required: true,
       trim: true,
     },
+    sourceUrl: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     rating: {
       type: Number,
       default: null,

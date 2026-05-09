@@ -26,5 +26,29 @@ export function formatRating(rating: number | null) {
     return "No rating";
   }
 
-  return `${rating.toFixed(rating % 1 === 0 ? 0 : 1)}/10`;
+  return rating.toFixed(1);
+}
+
+export function getRatingColor(rating: number | null) {
+  if (rating === null) {
+    return "#9ca3af";
+  }
+
+  if (rating < 2.5) {
+    return "#ef4444";
+  }
+
+  if (rating < 4.5) {
+    return "#f97316";
+  }
+
+  if (rating < 6.5) {
+    return "#eab308";
+  }
+
+  if (rating < 8.5) {
+    return "#84cc16";
+  }
+
+  return "#22c55e";
 }

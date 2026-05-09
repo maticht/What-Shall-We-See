@@ -106,3 +106,46 @@ img {
 .google-signin-shell iframe {
   color-scheme: dark;
 }
+
+.rating-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 14px;
+  flex: 1;
+  background: transparent;
+}
+
+.rating-slider::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.rating-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -4.5px;
+  height: 12px;
+  width: 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--rating-accent, #84cc16);
+  background: var(--rating-accent, #84cc16);
+  box-shadow: none;
+}
+
+.rating-slider::-moz-range-track {
+  height: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.rating-slider::-moz-range-thumb {
+  height: 12px;
+  width: 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--rating-accent, #84cc16);
+  background: var(--rating-accent, #84cc16);
+  box-shadow: none;
+}

@@ -36,16 +36,16 @@ export default async function HomePage() {
       <Surface className="px-4 py-4 sm:px-5">
         <div className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-end">
           <div className="max-w-2xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">
               Media planner
             </p>
-            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-stone-950 dark:text-white">
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-stone-100">
               What Shall We See
             </h1>
-            <h2 className="mt-6 text-3xl font-semibold leading-tight tracking-tight text-stone-950 dark:text-white sm:text-4xl">
+            <h2 className="mt-6 text-3xl font-semibold leading-tight tracking-tight text-stone-100 sm:text-4xl">
               Track what to watch, read, and share.
             </h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-stone-600 dark:text-stone-300">
+            <p className="mt-3 max-w-xl text-sm leading-6 text-stone-300">
               A strict, calm workspace for personal lists and collaborative
               categories with Google sign-in, ratings, statuses, and thoughtful
               mobile layout.
@@ -59,13 +59,13 @@ export default async function HomePage() {
       <section className="grid gap-3 lg:grid-cols-3">
         {featureCards.map(({ title, description, icon: Icon }) => (
           <Surface key={title} className="p-4">
-            <div className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted)] text-stone-800 dark:text-white">
+            <div className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted)] text-stone-100">
               <Icon size={16} />
             </div>
-            <h3 className="mt-3 text-base font-semibold text-stone-950 dark:text-white">
+            <h3 className="mt-3 text-base font-semibold text-stone-100">
               {title}
             </h3>
-            <p className="mt-1.5 text-sm leading-6 text-stone-600 dark:text-stone-300">
+            <p className="mt-1.5 text-sm leading-6 text-stone-300">
               {description}
             </p>
           </Surface>

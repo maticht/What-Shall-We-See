@@ -12,7 +12,7 @@ export function ToastStack({ toasts }: { toasts: ToastMessage[] }) {
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-[120] flex w-[min(92vw,360px)] flex-col gap-2">
+    <div className="pointer-events-none fixed bottom-4 right-4 z-[9999] flex w-[min(92vw,360px)] flex-col gap-2">
       {toasts.map((toast) => (
         <div
           key={toast.id}

@@ -7,6 +7,7 @@ type LegacyItem = {
   title?: string;
   status?: MediaStatus;
   imageUrl?: string;
+  sourceUrl?: string | null;
   rating?: number | null;
   updatedByName?: string | null;
   updatedByEmail?: string | null;
@@ -54,6 +55,10 @@ export async function migrateLegacyItemsForCategory(categoryId: string) {
       title: String(item.title).trim(),
       status: asValidStatus(item.status),
       imageUrl: String(item.imageUrl).trim(),
+      sourceUrl:
+        typeof item.sourceUrl === "string" && item.sourceUrl.trim()
+          ? item.sourceUrl.trim()
+          : null,
       rating: typeof item.rating === "number" ? item.rating : null,
       updatedByName: item.updatedByName ?? null,
       updatedByEmail: item.updatedByEmail ?? null,

@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { AlertTriangle, Trash2, X } from "lucide-react";
 import { CustomSelect } from "@/components/custom-select";
 import { STATUS_OPTIONS } from "@/lib/constants";
@@ -8,6 +8,7 @@ import type { MediaStatus } from "@/types/app";
 import { Button } from "@/components/ui/button";
 import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
+import { getRatingColor } from "@/lib/utils";
 
 export interface ItemEditorValue {
   mode: "create" | "edit";
@@ -17,6 +18,7 @@ export interface ItemEditorValue {
   title: string;
   status: MediaStatus;
   imageUrl: string;
+  sourceUrl: string;
   rating: string;
 }
 
@@ -78,6 +80,11 @@ export function ItemEditorModal({
     label: option.label,
     description: option.description,
   }));
+  const ratingNumber = Number(value.rating);
+  const hasRating = value.rating.trim() !== "" && Number.isFinite(ratingNumber);
+  const sliderValue = hasRating ? Math.min(10, Math.max(0, ratingNumber)) : 5;
+  const formattedRating = sliderValue.toFixed(1);
+  const ratingColor = getRatingColor(hasRating ? sliderValue : null);
 
   return (
     <>
@@ -86,17 +93,17 @@ export function ItemEditorModal({
         <div className="shrink-0 border-b border-[var(--line)] p-4 pb-3 sm:p-5 sm:pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
                 {value.mode === "create" ? "New card" : "Edit card"}
               </p>
-              <h2 className="mt-2 truncate text-xl font-semibold text-stone-950 dark:text-white">
+              <h2 className="mt-2 truncate text-xl font-semibold text-stone-100">
                 {value.categoryName}
               </h2>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-ui)] border border-[var(--line)] text-stone-500 transition hover:text-stone-950 dark:text-stone-400 dark:hover:text-white"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-ui)] border border-[var(--line)] text-stone-400 transition hover:text-white"
               aria-label="Close card editor"
             >
               <X size={18} />
@@ -128,7 +135,6 @@ export function ItemEditorModal({
               <FieldLabel>Status</FieldLabel>
               <CustomSelect
                 value={value.status}
-                blurBackdrop
                 onChange={(status) =>
                   onChange({ ...value, status: status as MediaStatus })
                 }
@@ -138,17 +144,26 @@ export function ItemEditorModal({
 
             <label className="block space-y-2">
               <FieldLabel>Your rating</FieldLabel>
-              <Input
-                type="number"
-                min="0"
-                max="10"
-                step="0.1"
-                value={value.rating}
-                onChange={(event) =>
-                  onChange({ ...value, rating: event.target.value })
-                }
-                placeholder="8.5"
-              />
+              <div className="flex h-11 items-center gap-3 rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--card)] px-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  step="0.1"
+                  value={sliderValue}
+                  onChange={(event) =>
+                    onChange({
+                      ...value,
+                      rating: Number(event.target.value).toFixed(1),
+                    })
+                  }
+                  className="rating-slider"
+                  style={{ "--rating-accent": ratingColor } as CSSProperties}
+                />
+                <span className="w-11 text-right text-sm font-semibold" style={{ color: ratingColor }}>
+                  {hasRating ? formattedRating : "—"}
+                </span>
+              </div>
             </label>
           </div>
 
@@ -160,6 +175,17 @@ export function ItemEditorModal({
                 onChange({ ...value, imageUrl: event.target.value })
               }
               placeholder="https://images.unsplash.com/..."
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <FieldLabel>Source link</FieldLabel>
+            <Input
+              value={value.sourceUrl}
+              onChange={(event) =>
+                onChange({ ...value, sourceUrl: event.target.value })
+              }
+              placeholder="https://example.com/original"
             />
           </label>
           </div>
@@ -216,10 +242,10 @@ export function ItemEditorModal({
               <AlertTriangle size={18} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-stone-950 dark:text-white">
+              <h3 className="text-lg font-semibold text-stone-100">
                 Delete item?
               </h3>
-              <p className="mt-2 text-sm leading-6 text-stone-600 dark:text-stone-300">
+              <p className="mt-2 text-sm leading-6 text-stone-300">
                 This will permanently remove this item.
               </p>
             </div>
@@ -254,3 +280,4 @@ export function ItemEditorModal({
     </>
   );
 }
+

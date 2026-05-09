@@ -10,23 +10,23 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  ExternalLink,
   Grid2X2,
   Grid3X3,
   LayoutList,
   Pencil,
   Plus,
   Search,
-  Trash2,
 } from "lucide-react";
 import { CustomSelect } from "@/components/custom-select";
 import { ItemEditorModal, type ItemEditorValue } from "@/components/item-editor-modal";
-import { SignOutButton } from "@/components/auth-buttons";
+import { SignOutButton, SignedInIndicator } from "@/components/auth-buttons";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Surface } from "@/components/ui/surface";
 import { ToastStack, type ToastMessage } from "@/components/ui/toast-stack";
-import { formatRating } from "@/lib/utils";
+import { cn, formatRating } from "@/lib/utils";
 import type {
   CategoryData,
   DashboardUser,
@@ -127,6 +127,7 @@ function buildCreateItemDraft(category: CategoryData): ItemEditorValue {
     title: "",
     status: "planned",
     imageUrl: "",
+    sourceUrl: "",
     rating: "",
   };
 }
@@ -140,6 +141,7 @@ function buildEditItemDraft(category: CategoryData, item: MediaItemData): ItemEd
     title: item.title,
     status: item.status,
     imageUrl: item.imageUrl,
+    sourceUrl: item.sourceUrl ?? "",
     rating: item.myRating === null ? "" : String(item.myRating),
   };
 }
@@ -151,9 +153,22 @@ function RatingLine({
   label: string;
   value: number | null;
 }) {
+  const toneClass =
+    value === null
+      ? "border-[var(--line)] bg-[var(--muted)] text-stone-200"
+      : value < 2.5
+        ? "border-rose-500/35 bg-rose-500/12 text-rose-200"
+        : value < 4.5
+          ? "border-orange-500/35 bg-orange-500/12 text-orange-200"
+          : value < 6.5
+            ? "border-amber-500/35 bg-amber-500/12 text-amber-200"
+            : value < 8.5
+              ? "border-lime-500/35 bg-lime-500/12 text-lime-200"
+              : "border-emerald-500/35 bg-emerald-500/12 text-emerald-200";
+
   return (
-    <div className="inline-flex items-center gap-1 rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted)] px-2 py-1 text-xs font-medium text-stone-700 dark:text-stone-200">
-      <span className="text-stone-500 dark:text-stone-400">{label}:</span>
+    <div className={cn("inline-flex items-center gap-1 rounded-[var(--radius-ui)] border px-2 py-1 text-xs font-medium", toneClass)}>
+      <span className="text-white/70">{label}:</span>
       <span>{formatRating(value)}</span>
     </div>
   );
@@ -164,13 +179,11 @@ function ItemCard({
   viewMode,
   isShared,
   onEdit,
-  onDelete,
 }: {
   item: MediaItemData;
   viewMode: ViewMode;
   isShared: boolean;
   onEdit: () => void;
-  onDelete: () => void;
 }) {
   const isList = viewMode === "list";
 
@@ -202,7 +215,7 @@ function ItemCard({
           <div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h3 className="truncate text-base font-semibold text-stone-950 dark:text-white">
+                <h3 className="truncate text-base font-semibold text-stone-100">
                   {item.title}
                 </h3>
               </div>
@@ -218,11 +231,21 @@ function ItemCard({
           </div>
 
           <div className="flex flex-wrap gap-2">
+            {item.sourceUrl ? (
+              <a
+                href={item.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted)] px-3 py-2 text-sm font-medium text-stone-100 transition hover:border-white/20 hover:text-white"
+              >
+                <ExternalLink size={14} />
+                Source
+              </a>
+            ) : null}
             <Button type="button" variant="secondary" onClick={onEdit}>
               <Pencil size={15} />
               Edit
             </Button>
-
           </div>
         </div>
       </div>
@@ -258,6 +281,7 @@ export function CategoryPageShell({
   );
 
   const isSharedCategory = category.scope === "shared";
+  const hasItems = totalItems > 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
 
   const pushToast = (tone: ToastMessage["tone"], text: string) => {
@@ -368,6 +392,7 @@ export function CategoryPageShell({
               title: draft.title,
               status: draft.status,
               imageUrl: draft.imageUrl,
+              sourceUrl: draft.sourceUrl,
               rating: draft.rating,
             }),
           });
@@ -378,6 +403,7 @@ export function CategoryPageShell({
               title: draft.title,
               status: draft.status,
               imageUrl: draft.imageUrl,
+              sourceUrl: draft.sourceUrl,
               rating: draft.rating,
             }),
           });
@@ -386,23 +412,6 @@ export function CategoryPageShell({
         setItemDraft(null);
       },
       draft.mode === "create" ? "Item created." : "Item updated.",
-    );
-  };
-
-  const deleteItem = (item: MediaItemData) => {
-    const approved = window.confirm(`Delete "${item.title}"?`);
-
-    if (!approved) {
-      return;
-    }
-
-    runMutation(
-      async () => {
-        await requestJson(`/api/categories/${category.id}/items/${item.id}`, {
-          method: "DELETE",
-        });
-      },
-      `"${item.title}" removed.`,
     );
   };
 
@@ -430,17 +439,17 @@ export function CategoryPageShell({
             <div>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-2 text-sm font-medium text-stone-600 transition hover:text-stone-950 dark:text-stone-300 dark:hover:text-white"
+                className="inline-flex items-center gap-2 text-sm font-medium text-stone-300 transition hover:text-white"
               >
                 <ArrowLeft size={15} />
                 Back to categories
               </Link>
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
                   {category.scope}
                 </p>
                 {category.connectionKey ? (
-                  <span className="rounded-[var(--radius-ui)] border border-[var(--line)] px-2 py-1 text-xs text-stone-600 dark:text-stone-300">
+                  <span className="rounded-[var(--radius-ui)] border border-[var(--line)] px-2 py-1 text-xs text-stone-300">
                     {category.connectionKey}
                   </span>
                 ) : null}
@@ -449,21 +458,34 @@ export function CategoryPageShell({
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted)] text-2xl">
                   {category.emoji}
                 </div>
-                <h1 className="min-w-0 text-2xl font-semibold text-stone-950 dark:text-white">
+                <h1 className="min-w-0 text-2xl font-semibold text-stone-100">
                   {category.name}
                 </h1>
               </div>
-              <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
+              <p className="mt-2 text-sm text-stone-300">
                 {totalItems} {totalItems === 1 ? "item" : "items"} in this category. Signed in as {user.name}.
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {!hasItems ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => setItemDraft(buildCreateItemDraft(category))}
+                  disabled={pending || loadingPage}
+                >
+                  <Plus size={16} />
+                  New item
+                </Button>
+              ) : null}
+              <SignedInIndicator />
               <SignOutButton />
             </div>
           </div>
         </Surface>
 
+        {hasItems ? (
         <Surface className="sticky top-2 z-20 p-3 backdrop-blur-sm sm:p-5">
           <div className="flex items-center justify-between gap-2 sm:hidden">
             <button
@@ -489,7 +511,7 @@ export function CategoryPageShell({
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div className="grid w-full gap-3 sm:grid-cols-2 lg:max-w-4xl lg:grid-cols-[1fr_200px_180px_180px]">
                 <label className="block">
-                  <span className="mb-2 flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-200">
+                  <span className="mb-2 flex items-center gap-2 text-sm font-medium text-stone-200">
                     <Search size={15} />
                     Search on this page
                   </span>
@@ -500,7 +522,7 @@ export function CategoryPageShell({
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-stone-700 dark:text-stone-200">
+                  <span className="mb-2 block text-sm font-medium text-stone-200">
                     Sort
                   </span>
                   <CustomSelect
@@ -510,7 +532,7 @@ export function CategoryPageShell({
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-stone-700 dark:text-stone-200">
+                  <span className="mb-2 block text-sm font-medium text-stone-200">
                     Status
                   </span>
                   <CustomSelect
@@ -520,7 +542,7 @@ export function CategoryPageShell({
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-stone-700 dark:text-stone-200">
+                  <span className="mb-2 block text-sm font-medium text-stone-200">
                     Rating
                   </span>
                   <CustomSelect
@@ -543,17 +565,19 @@ export function CategoryPageShell({
             </div>
           </div>
         </Surface>
+        ) : null}
 
+        {hasItems ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           {isSharedCategory ? (
-            <div className="inline-flex items-center gap-2 rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted)] px-2.5 py-1.5 text-xs text-stone-600 dark:text-stone-300">
-              <span className="font-medium text-stone-800 dark:text-stone-200">Last update:</span>
+            <div className="inline-flex items-center gap-2 rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted)] px-2.5 py-1.5 text-xs text-stone-300">
+              <span className="font-medium text-stone-200">Last update:</span>
               <span>{category.lastEditedByName ?? "Unknown"}</span>
               <span>•</span>
               <span>{formatDate(category.updatedAt)}</span>
             </div>
           ) : (
-            <span className="text-sm text-stone-500 dark:text-stone-400">
+            <span className="text-sm text-stone-400">
               {visibleItems.length} visible
             </span>
           )}
@@ -599,6 +623,7 @@ export function CategoryPageShell({
             </div>
           </div>
         </div>
+        ) : null}
 
         <section
           className={`grid gap-3 ${
@@ -617,36 +642,53 @@ export function CategoryPageShell({
                 viewMode={viewMode}
                 isShared={isSharedCategory}
                 onEdit={() => setItemDraft(buildEditItemDraft(category, item))}
-                onDelete={() => deleteItem(item)}
               />
             ))
           ) : (
             <Surface className="p-5">
-              <p className="font-medium text-stone-950 dark:text-white">No items found.</p>
-              <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
-                Add the first item or adjust your search.
+              <p className="font-medium text-stone-100">
+                {totalItems === 0 ? "No items yet." : "No items found."}
               </p>
+              <p className="mt-2 text-sm text-stone-300">
+                {totalItems === 0
+                  ? "Add the first item to this category."
+                  : "Adjust your search or filters."}
+              </p>
+              {totalItems === 0 ? (
+                <div className="mt-4">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => setItemDraft(buildCreateItemDraft(category))}
+                    disabled={pending || loadingPage}
+                  >
+                    <Plus size={16} />
+                    Add first item
+                  </Button>
+                </div>
+              ) : null}
             </Surface>
           )}
         </section>
 
+        {hasItems ? (
         <div className="flex items-center justify-end">
           <div className="inline-flex items-center rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--card)]">
             <button
               type="button"
-              className="inline-flex h-10 w-10 items-center justify-center text-stone-500 transition hover:text-stone-900 disabled:opacity-40 dark:text-stone-300 dark:hover:text-white"
+              className="inline-flex h-10 w-10 items-center justify-center text-stone-300 transition hover:text-white disabled:opacity-40"
               onClick={() => loadPage(currentPage - 1)}
               disabled={pending || loadingPage || currentPage <= 1}
               aria-label="Previous page"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="min-w-16 px-2 text-center text-sm font-medium text-stone-700 dark:text-stone-200">
+            <span className="min-w-16 px-2 text-center text-sm font-medium text-stone-200">
               {currentPage}/{totalPages}
             </span>
             <button
               type="button"
-              className="inline-flex h-10 w-10 items-center justify-center text-stone-500 transition hover:text-stone-900 disabled:opacity-40 dark:text-stone-300 dark:hover:text-white"
+              className="inline-flex h-10 w-10 items-center justify-center text-stone-300 transition hover:text-white disabled:opacity-40"
               onClick={() => loadPage(currentPage + 1)}
               disabled={pending || loadingPage || currentPage >= totalPages}
               aria-label="Next page"
@@ -655,6 +697,7 @@ export function CategoryPageShell({
             </button>
           </div>
         </div>
+        ) : null}
       </main>
 
       <ItemEditorModal

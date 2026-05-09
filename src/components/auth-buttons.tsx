@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, LogIn, LogOut } from "lucide-react";
+import { CheckCircle2, LoaderCircle, LogIn, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
@@ -174,10 +174,10 @@ export function SignInButton({ className }: { className?: string }) {
     <div ref={wrapperRef} className={cn("w-full max-w-[360px]", className)}>
       <div className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--card)] px-3 py-3 shadow-sm">
         <div className="mb-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
             Sign in
           </p>
-          <p className="mt-1 text-sm font-medium text-stone-800 dark:text-stone-100">
+          <p className="mt-1 text-sm font-medium text-stone-100">
             Open your personal and shared library.
           </p>
         </div>
@@ -195,14 +195,14 @@ export function SignInButton({ className }: { className?: string }) {
       </div>
 
       {!rendered && !localError ? (
-        <div className="mt-3 inline-flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+        <div className="mt-3 inline-flex items-center gap-2 text-sm text-stone-400">
           <LoaderCircle className="animate-spin" size={16} />
           Loading Google sign-in...
         </div>
       ) : null}
 
       {localError ? (
-        <p className="mt-3 text-sm text-rose-600 dark:text-rose-300">
+        <p className="mt-3 text-sm text-rose-300">
           {localError}
         </p>
       ) : null}
@@ -236,5 +236,14 @@ export function SignOutButton() {
       )}
       {pending ? "Signing out..." : "Sign out"}
     </Button>
+  );
+}
+
+export function SignedInIndicator() {
+  return (
+    <div className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-ui)] border border-emerald-500/30 bg-emerald-500/10 px-3 text-sm font-medium text-emerald-200">
+      <CheckCircle2 size={15} />
+      Signed in
+    </div>
   );
 }

@@ -17,7 +17,7 @@ import {
   CategoryEditorModal,
   type CategoryEditorValue,
 } from "@/components/category-editor-modal";
-import { SignOutButton } from "@/components/auth-buttons";
+import { SignOutButton, SignedInIndicator } from "@/components/auth-buttons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -90,21 +90,21 @@ function CategoryCard({
         </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate text-base font-semibold text-stone-950 dark:text-white">
+            <h3 className="truncate text-base font-semibold text-stone-100">
               {category.name}
             </h3>
-            <span className="rounded-[var(--radius-ui)] border border-[var(--line)] px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-600 dark:text-stone-300">
+            <span className="rounded-[var(--radius-ui)] border border-[var(--line)] px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-300">
               {category.scope}
             </span>
           </div>
-          <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
+          <p className="mt-2 text-sm text-stone-300">
             {category.itemsCount} {category.itemsCount === 1 ? "item" : "items"}
           </p>
         </div>
       </div>
 
       {category.connectionKey ? (
-        <p className="mt-3 text-xs uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">
+        <p className="mt-3 text-xs uppercase tracking-[0.14em] text-stone-400">
           {category.connectionKey}
         </p>
       ) : null}
@@ -137,7 +137,7 @@ function CategoryGrid({
 }) {
   if (!categories.length) {
     return (
-      <div className="rounded-[var(--radius-panel)] border border-dashed border-[var(--line)] bg-[var(--muted)] p-4 text-sm text-stone-600 dark:text-stone-300">
+      <div className="rounded-[var(--radius-panel)] border border-dashed border-[var(--line)] bg-[var(--muted)] p-4 text-sm text-stone-300">
         {emptyText}
       </div>
     );
@@ -297,14 +297,15 @@ export function DashboardShell({ data }: { data: DashboardData }) {
         <Surface className="p-4 sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-stone-400">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
                 Dashboard
               </p>
-              <h1 className="mt-2 text-2xl font-semibold text-stone-950 dark:text-white">
+              <h1 className="mt-2 text-2xl font-semibold text-stone-100">
                 Category control
               </h1>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <SignedInIndicator />
               <SignOutButton />
             </div>
           </div>
@@ -316,7 +317,7 @@ export function DashboardShell({ data }: { data: DashboardData }) {
               className={`rounded-[var(--radius-ui)] px-4 py-2 text-sm font-medium transition ${
                 activeTab === "personal"
                   ? "bg-[var(--muted-strong)] text-white"
-                  : "text-stone-500 hover:text-stone-900 dark:text-stone-300 dark:hover:text-white"
+                  : "text-stone-300 hover:text-white"
               }`}
             >
               Personal
@@ -327,7 +328,7 @@ export function DashboardShell({ data }: { data: DashboardData }) {
               className={`rounded-[var(--radius-ui)] px-4 py-2 text-sm font-medium transition ${
                 activeTab === "shared"
                   ? "bg-[var(--muted-strong)] text-white"
-                  : "text-stone-500 hover:text-stone-900 dark:text-stone-300 dark:hover:text-white"
+                  : "text-stone-300 hover:text-white"
               }`}
             >
               Shared
@@ -387,10 +388,10 @@ export function DashboardShell({ data }: { data: DashboardData }) {
                   {Object.entries(sharedByConnection).map(([connection, categories]) => (
                     <section key={connection} className="grid gap-3">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-400">
                           {connection}
                         </p>
-                        <span className="text-xs text-stone-500 dark:text-stone-400">
+                        <span className="text-xs text-stone-400">
                           {categories.length} {categories.length === 1 ? "category" : "categories"}
                         </span>
                       </div>
@@ -403,7 +404,7 @@ export function DashboardShell({ data }: { data: DashboardData }) {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-[var(--radius-panel)] border border-dashed border-[var(--line)] bg-[var(--muted)] p-4 text-sm text-stone-600 dark:text-stone-300">
+                <div className="rounded-[var(--radius-panel)] border border-dashed border-[var(--line)] bg-[var(--muted)] p-4 text-sm text-stone-300">
                   No shared categories yet. Add an access code and create one.
                 </div>
               )}
@@ -438,13 +439,13 @@ export function DashboardShell({ data }: { data: DashboardData }) {
                   data.user.connections.map((connection) => (
                     <span
                       key={connection}
-                      className="inline-flex items-center gap-2 rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--card)] px-3 py-2 text-sm font-medium text-stone-800 dark:text-stone-100"
+                      className="inline-flex items-center gap-2 rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--card)] px-3 py-2 text-sm font-medium text-stone-100"
                     >
                       {connection}
                       <button
                         type="button"
                         onClick={() => handleConnectionRemove(connection)}
-                        className="text-stone-500 transition hover:text-rose-600 dark:text-stone-400 dark:hover:text-rose-300"
+                        className="text-stone-400 transition hover:text-rose-300"
                         aria-label={`Remove ${connection}`}
                       >
                         <Trash2 size={14} />
@@ -452,7 +453,7 @@ export function DashboardShell({ data }: { data: DashboardData }) {
                     </span>
                   ))
                 ) : (
-                  <p className="text-sm text-stone-500 dark:text-stone-400">
+                  <p className="text-sm text-stone-400">
                     No access codes yet.
                   </p>
                 )}

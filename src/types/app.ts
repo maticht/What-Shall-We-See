@@ -8,6 +8,7 @@ export interface MediaItemData {
   title: string;
   status: MediaStatus;
   imageUrl: string;
+  sourceUrl: string | null;
   rating: number | null;
   myRating: number | null;
   partnerRating: number | null;

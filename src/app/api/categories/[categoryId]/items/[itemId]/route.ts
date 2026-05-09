@@ -45,6 +45,7 @@ export async function PATCH(
     item.title = payload.title;
     item.status = payload.status;
     item.imageUrl = payload.imageUrl;
+    item.sourceUrl = payload.sourceUrl;
 
     const currentUserId = user._id.toString();
     const ratings = Array.isArray(item.ratings) ? [...item.ratings] : [];
@@ -72,7 +73,11 @@ export async function PATCH(
     }
 
     item.ratings = ratings;
-    item.rating = payload.rating;
+    if (category.scope === "personal") {
+      item.rating = payload.rating;
+    } else if (!ratings.length) {
+      item.rating = null;
+    }
     item.updatedByName = user.name;
     item.updatedByEmail = user.email;
     await item.save();

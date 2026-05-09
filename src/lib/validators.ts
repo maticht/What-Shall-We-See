@@ -104,12 +104,15 @@ export function parseItemPayload(payload: unknown): {
   title: string;
   status: MediaStatus;
   imageUrl: string;
+  sourceUrl: string | null;
   rating: number | null;
 } {
   const data = typeof payload === "object" && payload !== null ? payload : {};
   const title = asString((data as { title?: unknown }).title).trim();
   const status = asString((data as { status?: unknown }).status) as MediaStatus;
   const imageUrl = parseHttpUrl(asString((data as { imageUrl?: unknown }).imageUrl).trim());
+  const rawSourceUrl = asString((data as { sourceUrl?: unknown }).sourceUrl).trim();
+  const sourceUrl = rawSourceUrl ? parseHttpUrl(rawSourceUrl) : null;
   const rawRating = (data as { rating?: unknown }).rating;
   const rating =
     rawRating === "" || rawRating === null || rawRating === undefined
@@ -128,6 +131,10 @@ export function parseItemPayload(payload: unknown): {
     throw new Error("Image URL must be a valid http or https link.");
   }
 
+  if (rawSourceUrl && !sourceUrl) {
+    throw new Error("Source link must be a valid http or https URL.");
+  }
+
   if (rating !== null && (!Number.isFinite(rating) || rating < 0 || rating > 10)) {
     throw new Error("Rating must be between 0 and 10.");
   }
@@ -136,6 +143,7 @@ export function parseItemPayload(payload: unknown): {
     title,
     status,
     imageUrl,
+    sourceUrl,
     rating,
   };
 }
