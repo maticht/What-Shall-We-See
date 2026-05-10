@@ -124,8 +124,8 @@ export function CategoryEditorModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto overscroll-contain bg-stone-950/35 p-3 backdrop-blur-sm sm:items-center sm:p-4">
-        <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--panel)] shadow-[0_18px_56px_rgba(20,20,20,0.18)] sm:max-h-[calc(100dvh-2rem)]">
+      <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto overscroll-contain bg-stone-950/35 px-3 pt-3 pb-8 backdrop-blur-sm sm:items-center sm:p-4">
+        <div className="flex max-h-[calc(100dvh-3rem)] w-full max-w-lg flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--panel)] shadow-[0_18px_56px_rgba(20,20,20,0.18)] sm:max-h-[calc(100dvh-2rem)]">
           <div className="shrink-0 border-b border-[var(--line)] p-4 pb-3 sm:p-5 sm:pb-4">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -270,24 +270,16 @@ export function CategoryEditorModal({
                     variant="danger"
                     disabled={pending}
                     onClick={() => setConfirmDeleteOpen(true)}
-                    className="w-full justify-center sm:w-auto"
+                    className="order-3 w-full justify-center sm:order-1 sm:w-auto"
                   >
                     <Trash2 size={15} />
                     Delete category
                   </Button>
                 ) : (
-                  <div className="hidden sm:block" />
+                  <div className="order-3 hidden sm:order-1 sm:block" />
                 )}
 
-                <div className="grid gap-2 sm:flex sm:justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={onClose}
-                    className="w-full sm:w-auto"
-                  >
-                    Cancel
-                  </Button>
+                <div className="order-1 grid gap-2 sm:order-2 sm:flex sm:justify-end">
                   <Button
                     type="submit"
                     variant="primary"
@@ -309,7 +301,7 @@ export function CategoryEditorModal({
 
       {emojiPickerOpen ? (
         <div className="fixed inset-0 z-[60] flex items-end justify-center overflow-y-auto overscroll-contain bg-stone-950/55 p-3 backdrop-blur-md sm:items-center sm:p-4">
-          <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-md flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--panel)] shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:max-h-[82dvh]">
+          <div className="flex max-h-[calc(100dvh-3rem)] w-full max-w-md flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--panel)] shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:max-h-[82dvh]">
             <div className="shrink-0 border-b border-[var(--line)] bg-[var(--muted)] p-3 sm:p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -403,7 +395,7 @@ export function CategoryEditorModal({
                 type="button"
                 variant="ghost"
                 onClick={() => setConfirmDeleteOpen(false)}
-                className="order-2 w-full sm:order-1"
+                className="order-1 w-full sm:order-1"
               >
                 Cancel
               </Button>
@@ -415,7 +407,7 @@ export function CategoryEditorModal({
                   setConfirmDeleteOpen(false);
                   onDelete(value);
                 }}
-                className="order-1 w-full sm:order-2"
+                className="order-2 w-full sm:order-2"
               >
                 <Trash2 size={15} />
                 {pending ? "Deleting..." : "Delete"}

@@ -233,8 +233,8 @@ export function ItemDetailsModal({
   );
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto overscroll-contain bg-stone-950/45 p-3 backdrop-blur-sm sm:items-center sm:p-4">
-      <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--panel)] shadow-[0_18px_56px_rgba(20,20,20,0.18)] sm:max-h-[calc(100dvh-2rem)]">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto overscroll-contain bg-stone-950/45 px-3 pt-3 pb-8 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="flex max-h-[calc(100dvh-3rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--panel)] shadow-[0_18px_56px_rgba(20,20,20,0.18)] sm:max-h-[calc(100dvh-2rem)]">
         <div className="shrink-0 border-b border-[var(--line)] p-4 pb-3 sm:p-5 sm:pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
