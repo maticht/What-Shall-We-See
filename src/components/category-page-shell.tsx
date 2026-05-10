@@ -654,7 +654,7 @@ export function CategoryPageShell({
 
         {hasCategoryItems ? (
         <Surface className="sticky top-2 z-20 p-3 backdrop-blur-sm sm:p-5">
-          <div className="flex items-center justify-between gap-2 sm:hidden">
+          <div className="flex items-center justify-between gap-2 min-[800px]:hidden">
             <button
               type="button"
               onClick={() => setMobileFiltersOpen((current) => !current)}
@@ -663,15 +663,17 @@ export function CategoryPageShell({
               Filters & sort
               {mobileFiltersOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={() => setItemDraft(buildCreateItemDraft(category))}
-              disabled={pending || loadingPage}
-            >
-              <Plus size={16} />
-              New
-            </Button>
+            {isUnder800 ? (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => setItemDraft(buildCreateItemDraft(category))}
+                disabled={pending || loadingPage}
+              >
+                <Plus size={16} />
+                New
+              </Button>
+            ) : null}
           </div>
 
           <div className={`${mobileFiltersOpen ? "mt-3 grid" : "hidden"} gap-3 sm:mt-0 sm:grid`}>
@@ -719,16 +721,17 @@ export function CategoryPageShell({
                   />
                 </label>
               </div>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={() => setItemDraft(buildCreateItemDraft(category))}
-                disabled={pending || loadingPage}
-                className="hidden sm:inline-flex"
-              >
-                <Plus size={16} />
-                New item
-              </Button>
+              {!isUnder800 ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => setItemDraft(buildCreateItemDraft(category))}
+                  disabled={pending || loadingPage}
+                >
+                  <Plus size={16} />
+                  New item
+                </Button>
+              ) : null}
             </div>
           </div>
         </Surface>
