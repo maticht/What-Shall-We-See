@@ -97,6 +97,32 @@ function tmdbLanguage(language: DetailLanguage) {
   return language === "ru" ? "ru-RU" : "en-US";
 }
 
+function inferGlobalTypeFromSourceUrl(sourceUrl: string | null): CategoryGlobalType | null {
+  const source = trimToNull(sourceUrl);
+
+  if (!source) {
+    return null;
+  }
+
+  if (source.includes("themoviedb.org")) {
+    return "movie";
+  }
+
+  if (source.includes("igdb.com")) {
+    return "game";
+  }
+
+  if (source.includes("shikimori.one")) {
+    return "anime";
+  }
+
+  if (source.includes("openlibrary.org")) {
+    return "book";
+  }
+
+  return null;
+}
+
 function parseTmdbSource(sourceUrl: string | null) {
   const source = trimToNull(sourceUrl);
 
@@ -104,14 +130,18 @@ function parseTmdbSource(sourceUrl: string | null) {
     return null;
   }
 
-  const match = source.match(/themoviedb\.org\/(movie|tv)\/(\d+)/i);
+  const match = source.match(/themoviedb\.org\/(movie|tv|collection)\/(\d+)/i);
 
   if (!match) {
     return null;
   }
 
   return {
-    mediaType: (match[1] === "tv" ? "tv" : "movie") as "movie" | "tv",
+    mediaType: (match[1] === "tv"
+      ? "tv"
+      : match[1] === "collection"
+        ? "collection"
+        : "movie") as "movie" | "tv" | "collection",
     id: Number.parseInt(match[2], 10),
   };
 }
@@ -151,7 +181,7 @@ async function tmdbRequest<T>(
 
 async function getTmdbDetails(input: ResolveDetailsInput): Promise<ExternalItemDetails> {
   const source = parseTmdbSource(input.sourceUrl);
-  let mediaType: "movie" | "tv" = source?.mediaType ?? "movie";
+  let mediaType: "movie" | "tv" | "collection" = source?.mediaType ?? "movie";
   let mediaId = source?.id ?? null;
 
   if (!mediaId) {
@@ -188,6 +218,37 @@ async function getTmdbDetails(input: ResolveDetailsInput): Promise<ExternalItemD
 
     mediaType = first.media_type === "tv" ? "tv" : "movie";
     mediaId = first.id;
+  }
+
+  if (mediaType === "collection") {
+    const details = await tmdbRequest<{
+      name?: string;
+      overview?: string;
+      poster_path?: string | null;
+      parts?: Array<{
+        release_date?: string;
+      }>;
+    }>(`collection/${mediaId}`, new URLSearchParams({
+      language: tmdbLanguage(input.language),
+    }));
+
+    const years = (details.parts ?? [])
+      .map((part) => parseYear(part.release_date))
+      .filter((value): value is string => Boolean(value));
+    const minYear = years.length ? years.sort()[0] : null;
+
+    return {
+      provider: "tmdb",
+      title: trimToNull(details.name) ?? input.title,
+      description: stripHtmlAndBbCode(trimToNull(details.overview)),
+      globalRating: null,
+      year: minYear,
+      author: null,
+      genres: [],
+      imageUrl: details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : "",
+      sourceUrl: `https://www.themoviedb.org/collection/${mediaId}`,
+      extras: [],
+    };
   }
 
   const details = await tmdbRequest<{
@@ -294,6 +355,17 @@ function normalizeIgdbCover(value: unknown) {
   return withProtocol.replace("/t_thumb/", "/t_cover_big/");
 }
 
+function parseIgdbSlug(sourceUrl: string | null) {
+  const source = trimToNull(sourceUrl);
+
+  if (!source) {
+    return null;
+  }
+
+  const match = source.match(/igdb\.com\/games\/([a-z0-9-]+)/i);
+  return match ? match[1].toLowerCase() : null;
+}
+
 async function getIgdbDetails(input: ResolveDetailsInput): Promise<ExternalItemDetails> {
   const clientId = trimToNull(process.env.IGDB_CLIENT_ID);
 
@@ -319,9 +391,13 @@ async function getIgdbDetails(input: ResolveDetailsInput): Promise<ExternalItemD
     }>;
   };
 
+  const fields =
+    "fields name,summary,rating,first_release_date,genres.name,url,cover.url,involved_companies.developer,involved_companies.publisher,involved_companies.company.name,slug;";
+  const slug = parseIgdbSlug(input.sourceUrl);
   const escaped = input.title.replaceAll('"', "\\\"");
-  const body =
-    `search "${escaped}"; fields name,summary,rating,first_release_date,genres.name,url,cover.url,involved_companies.developer,involved_companies.publisher,involved_companies.company.name; where version_parent = null; limit 1;`;
+  const body = slug
+    ? `${fields} where slug = "${slug}"; limit 1;`
+    : `${fields} search "${escaped}"; where version_parent = null; limit 1;`;
 
   const results = await fetchJson<Game[]>("https://api.igdb.com/v4/games", {
     method: "POST",
@@ -615,7 +691,13 @@ async function getOpenLibraryDetails(input: ResolveDetailsInput): Promise<Extern
 export async function resolveExternalItemDetails(
   input: ResolveDetailsInput,
 ): Promise<ExternalItemDetails> {
-  if (input.globalType === "other") {
+  const inferredGlobalType = inferGlobalTypeFromSourceUrl(input.sourceUrl);
+  const effectiveGlobalType =
+    input.globalType === "other"
+      ? (inferredGlobalType ?? "other")
+      : input.globalType;
+
+  if (effectiveGlobalType === "other") {
     return {
       provider: "none",
       title: input.title,
@@ -631,7 +713,7 @@ export async function resolveExternalItemDetails(
   }
 
   try {
-    switch (input.globalType) {
+    switch (effectiveGlobalType) {
       case "movie":
         return await getTmdbDetails(input);
       case "game":

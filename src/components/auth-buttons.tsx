@@ -1,12 +1,40 @@
 "use client";
 
-import { CheckCircle2, LoaderCircle, LogIn, LogOut } from "lucide-react";
+import { CheckCircle2, LoaderCircle, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const GOOGLE_SCRIPT_ID = "google-identity-services";
+
+function GoogleGlyph() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      focusable="false"
+    >
+      <path
+        fill="#EA4335"
+        d="M12 10.2v3.9h5.4c-.2 1.3-1.5 3.9-5.4 3.9-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.4 14.6 2.5 12 2.5 6.8 2.5 2.5 6.8 2.5 12s4.3 9.5 9.5 9.5c5.5 0 9.1-3.9 9.1-9.3 0-.6-.1-1.2-.2-2H12Z"
+      />
+      <path
+        fill="#34A853"
+        d="M2.5 7.6 5.7 10c.8-2.3 3-3.9 5.8-3.9 1.8 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.4 14.6 2.5 12 2.5 8.3 2.5 5 4.6 3.3 7.6Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M2.5 16.4 5.8 14c.7 2.4 3 4 5.7 4 3.4 0 4.8-2.3 5.2-3.5h-5.2v-3.8h9c.1.5.2 1 .2 1.6 0 5.4-3.6 9.2-9.1 9.2-3.7 0-7-2.1-8.8-5.1Z"
+      />
+      <path
+        fill="#4285F4"
+        d="M21 12c0-.6-.1-1.2-.2-1.8H12v3.9h5.4c-.3 1.4-1.2 2.6-2.6 3.3l3.2 2.5C20 18.1 21 15.4 21 12Z"
+      />
+    </svg>
+  );
+}
 
 function loadGoogleScript() {
   return new Promise<NonNullable<Window["google"]>>((resolve, reject) => {
@@ -183,13 +211,13 @@ export function SignInButton({ className }: { className?: string }) {
         </div>
 
         <div className="relative h-11 overflow-hidden rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted-strong)]">
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 text-sm font-semibold text-white">
-            <LogIn size={16} />
+          <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center gap-2 text-sm font-semibold text-white">
+            <GoogleGlyph />
             Continue with Google
           </div>
           <div
             ref={buttonRef}
-            className="google-signin-shell absolute inset-0 z-10 flex items-center justify-center overflow-hidden opacity-[0.01]"
+            className="google-signin-shell absolute inset-0 z-10 flex items-center justify-center overflow-hidden opacity-[0.001]"
           />
         </div>
       </div>

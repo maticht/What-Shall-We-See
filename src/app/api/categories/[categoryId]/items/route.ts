@@ -9,6 +9,10 @@ import Item from "@/models/item";
 
 export const runtime = "nodejs";
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ categoryId: string }> },
@@ -38,14 +42,25 @@ export async function GET(
 
   const url = new URL(request.url);
   const { offset, limit } = parseItemPagination(url.searchParams);
+  const query = (url.searchParams.get("q") ?? "").trim();
+  const itemFilter =
+    query.length > 0
+      ? {
+          categoryId: category._id,
+          title: {
+            $regex: escapeRegex(query),
+            $options: "i",
+          },
+        }
+      : { categoryId: category._id };
 
   const [items, total] = await Promise.all([
-    Item.find({ categoryId: category._id })
+    Item.find(itemFilter)
       .sort({ updatedAt: -1, _id: -1 })
       .skip(offset)
       .limit(limit)
       .lean(),
-    Item.countDocuments({ categoryId: category._id }),
+    Item.countDocuments(itemFilter),
   ]);
 
   const from = total === 0 ? 0 : Math.min(offset, total - 1);

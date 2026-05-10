@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -22,6 +22,7 @@ import {
 import { CustomSelect } from "@/components/custom-select";
 import { ItemDetailsModal } from "@/components/item-details-modal";
 import { ItemEditorModal, type ItemEditorValue } from "@/components/item-editor-modal";
+import { RatingQuickEditModal } from "@/components/rating-quick-edit-modal";
 import { SignOutButton, SignedInIndicator } from "@/components/auth-buttons";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -159,9 +160,11 @@ function buildEditItemDraft(category: CategoryData, item: MediaItemData): ItemEd
 function RatingLine({
   label,
   value,
+  onClick,
 }: {
   label: string;
   value: number | null;
+  onClick?: (element: HTMLDivElement) => void;
 }) {
   const toneClass =
     value === null
@@ -175,6 +178,34 @@ function RatingLine({
             : value < 8.5
               ? "border-lime-500/35 bg-lime-500/12 text-lime-200"
               : "border-emerald-500/35 bg-emerald-500/12 text-emerald-200";
+
+  if (onClick) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={(event) => {
+          event.stopPropagation();
+          onClick(event.currentTarget);
+        }}
+        onMouseDown={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            onClick(event.currentTarget);
+          }
+        }}
+        className={cn(
+          "inline-flex items-center gap-1 rounded-[var(--radius-ui)] border px-2 py-1 text-xs font-medium",
+          toneClass,
+        )}
+      >
+        <span className="text-white/70">{label}:</span>
+        <span>{formatRating(value)}</span>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("inline-flex items-center gap-1 rounded-[var(--radius-ui)] border px-2 py-1 text-xs font-medium", toneClass)}>
@@ -190,12 +221,14 @@ function ItemCard({
   isShared,
   onOpenDetails,
   onEdit,
+  onQuickRate,
 }: {
   item: MediaItemData;
   viewMode: ViewMode;
   isShared: boolean;
   onOpenDetails: () => void;
   onEdit: () => void;
+  onQuickRate: (element: HTMLDivElement) => void;
 }) {
   const isList = viewMode === "list";
   const isGrid2 = viewMode === "grid2";
@@ -264,7 +297,13 @@ function ItemCard({
             </div>
 
             <div className="mt-3 flex flex-wrap gap-1.5">
-              <RatingLine label="You" value={item.myRating} />
+              <RatingLine
+                label="You"
+                value={item.myRating}
+                onClick={(element) => {
+                  onQuickRate(element);
+                }}
+              />
               {isShared ? (
                 <RatingLine label={item.partnerLabel ?? "Partner"} value={item.partnerRating} />
               ) : null}
@@ -311,6 +350,23 @@ export function CategoryPageShell({
   category: CategoryData;
   firstPage: PaginatedItemsData;
 }) {
+  interface QuickRatingDraft {
+    nonce: number;
+    itemId: string;
+    itemTitle: string;
+    title: string;
+    status: MediaItemData["status"];
+    imageUrl: string;
+    sourceUrl: string;
+    rating: string;
+    anchorRect: {
+      top: number;
+      left: number;
+      bottom: number;
+      width: number;
+    } | null;
+  }
+
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [loadingPage, setLoadingPage] = useState(false);
@@ -323,7 +379,10 @@ export function CategoryPageShell({
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const toastCounter = useRef(0);
+  const quickRatingNonceRef = useRef(0);
+  const didHydrateSearchRef = useRef(false);
   const [itemDraft, setItemDraft] = useState<ItemEditorValue | null>(null);
+  const [quickRatingDraft, setQuickRatingDraft] = useState<QuickRatingDraft | null>(null);
   const [detailsItem, setDetailsItem] = useState<MediaItemData | null>(null);
   const [pageItems, setPageItems] = useState<MediaItemData[]>(firstPage.items);
   const [totalItems, setTotalItems] = useState(firstPage.total);
@@ -332,8 +391,9 @@ export function CategoryPageShell({
   );
 
   const isSharedCategory = category.scope === "shared";
-  const hasItems = totalItems > 0;
+  const hasCategoryItems = category.itemsCount > 0 || firstPage.total > 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const normalizedQuery = query.trim();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 799px)");
@@ -360,12 +420,7 @@ export function CategoryPageShell({
   };
 
   const visibleItems = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
     const filtered = pageItems.filter((item) => {
-      if (normalizedQuery && !item.title.toLowerCase().includes(normalizedQuery)) {
-        return false;
-      }
-
       if (statusFilter !== "all" && item.status !== statusFilter) {
         return false;
       }
@@ -404,17 +459,20 @@ export function CategoryPageShell({
           return right.updatedAt.localeCompare(left.updatedAt);
       }
     });
-  }, [pageItems, query, sort, statusFilter, ratingFilter]);
+  }, [pageItems, sort, statusFilter, ratingFilter]);
 
-  const loadPage = async (pageNumber: number) => {
+  const loadPage = useCallback(async (pageNumber: number) => {
     const boundedPage = Math.max(1, Math.min(pageNumber, totalPages));
     const offset = (boundedPage - 1) * PAGE_SIZE;
 
     setLoadingPage(true);
 
     try {
+      const searchQuery = normalizedQuery
+        ? `&q=${encodeURIComponent(normalizedQuery)}`
+        : "";
       const data = await requestPage(
-        `/api/categories/${category.id}/items?offset=${offset}&limit=${PAGE_SIZE}&range=${offset}:${offset + PAGE_SIZE - 1}`,
+        `/api/categories/${category.id}/items?offset=${offset}&limit=${PAGE_SIZE}&range=${offset}:${offset + PAGE_SIZE - 1}${searchQuery}`,
       );
 
       setPageItems(data.items);
@@ -428,7 +486,22 @@ export function CategoryPageShell({
     } finally {
       setLoadingPage(false);
     }
-  };
+  }, [category.id, normalizedQuery, totalPages]);
+
+  useEffect(() => {
+    if (!didHydrateSearchRef.current) {
+      didHydrateSearchRef.current = true;
+      if (!normalizedQuery) {
+        return;
+      }
+    }
+
+    const timeout = window.setTimeout(() => {
+      void loadPage(1);
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [loadPage, normalizedQuery]);
 
   const runMutation = (work: () => Promise<void>, successMessage: string) => {
     startTransition(async () => {
@@ -497,6 +570,50 @@ export function CategoryPageShell({
     );
   };
 
+  const toQuickRatingDraft = (
+    item: MediaItemData,
+    anchorRect: QuickRatingDraft["anchorRect"] = null,
+  ): QuickRatingDraft => ({
+    nonce: ++quickRatingNonceRef.current,
+    itemId: item.id,
+    itemTitle: item.title,
+    title: item.title,
+    status: item.status,
+    imageUrl: item.imageUrl,
+    sourceUrl: item.sourceUrl ?? "",
+    rating: item.myRating === null ? "" : item.myRating.toFixed(1),
+    anchorRect,
+  });
+
+  const submitQuickRating = (draft: QuickRatingDraft) => {
+    runMutation(
+      async () => {
+        await requestJson(`/api/categories/${category.id}/items/${draft.itemId}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            title: draft.title,
+            status: draft.status,
+            imageUrl: draft.imageUrl,
+            sourceUrl: draft.sourceUrl,
+            rating: draft.rating,
+          }),
+        });
+        setQuickRatingDraft(null);
+      },
+      "Rating updated.",
+    );
+  };
+
+  const toAnchorRect = (element: HTMLElement): QuickRatingDraft["anchorRect"] => {
+    const rect = element.getBoundingClientRect();
+    return {
+      top: rect.top,
+      left: rect.left,
+      bottom: rect.bottom,
+      width: rect.width,
+    };
+  };
+
   return (
     <>
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
@@ -532,12 +649,15 @@ export function CategoryPageShell({
                 </h1>
               </div>
               <p className="mt-2 text-sm text-stone-300">
-                {totalItems} {totalItems === 1 ? "item" : "items"} in this category. Signed in as {user.name}.
+                {normalizedQuery
+                  ? `${totalItems} ${totalItems === 1 ? "result" : "results"} for "${normalizedQuery}".`
+                  : `${totalItems} ${totalItems === 1 ? "item" : "items"} in this category.`}{" "}
+                Signed in as {user.name}.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {!hasItems ? (
+              {!hasCategoryItems ? (
                 <Button
                   type="button"
                   variant="primary"
@@ -554,7 +674,7 @@ export function CategoryPageShell({
           </div>
         </Surface>
 
-        {hasItems ? (
+        {hasCategoryItems ? (
         <Surface className="sticky top-2 z-20 p-3 backdrop-blur-sm sm:p-5">
           <div className="flex items-center justify-between gap-2 sm:hidden">
             <button
@@ -582,7 +702,7 @@ export function CategoryPageShell({
                 <label className="block">
                   <span className="mb-2 flex items-center gap-2 text-sm font-medium text-stone-200">
                     <Search size={15} />
-                    Search on this page
+                    Search in category
                   </span>
                   <Input
                     value={query}
@@ -636,7 +756,7 @@ export function CategoryPageShell({
         </Surface>
         ) : null}
 
-        {hasItems ? (
+        {hasCategoryItems ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           {isSharedCategory ? (
             <div className="inline-flex items-center gap-2 rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted)] px-2.5 py-1.5 text-xs text-stone-300">
@@ -714,19 +834,24 @@ export function CategoryPageShell({
                 isShared={isSharedCategory}
                 onOpenDetails={() => setDetailsItem(item)}
                 onEdit={() => setItemDraft(buildEditItemDraft(category, item))}
+                onQuickRate={(element) =>
+                  setQuickRatingDraft(
+                    toQuickRatingDraft(item, toAnchorRect(element)),
+                  )
+                }
               />
             ))
           ) : (
             <Surface className="p-5">
               <p className="font-medium text-stone-100">
-                {totalItems === 0 ? "No items yet." : "No items found."}
+                {!hasCategoryItems ? "No items yet." : "No items found."}
               </p>
               <p className="mt-2 text-sm text-stone-300">
-                {totalItems === 0
+                {!hasCategoryItems
                   ? "Add the first item to this category."
                   : "Adjust your search or filters."}
               </p>
-              {totalItems === 0 ? (
+              {!hasCategoryItems ? (
                 <div className="mt-4">
                   <Button
                     type="button"
@@ -743,7 +868,7 @@ export function CategoryPageShell({
           )}
         </section>
 
-        {hasItems ? (
+        {hasCategoryItems && totalPages > 1 ? (
         <div className="flex items-center justify-end">
           <div className="inline-flex items-center rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--card)]">
             <button
@@ -787,7 +912,39 @@ export function CategoryPageShell({
         categoryId={category.id}
         categoryGlobalType={category.globalType}
         item={detailsItem}
+        onEdit={() => {
+          if (!detailsItem) {
+            return;
+          }
+          setDetailsItem(null);
+          setItemDraft(buildEditItemDraft(category, detailsItem));
+        }}
+        onQuickRate={(event) => {
+          if (!detailsItem) {
+            return;
+          }
+
+          setQuickRatingDraft(
+            toQuickRatingDraft(detailsItem, toAnchorRect(event.currentTarget)),
+          );
+        }}
         onClose={() => setDetailsItem(null)}
+      />
+      <RatingQuickEditModal
+        key={quickRatingDraft ? `${quickRatingDraft.itemId}-${quickRatingDraft.nonce}` : "quick-rating"}
+        open={Boolean(quickRatingDraft)}
+        itemTitle={quickRatingDraft?.itemTitle ?? ""}
+        initialRating={quickRatingDraft?.rating ?? ""}
+        anchorRect={quickRatingDraft?.anchorRect ?? null}
+        pending={pending || loadingPage}
+        onClose={() => setQuickRatingDraft(null)}
+        onSave={(rating) => {
+          if (!quickRatingDraft) {
+            return;
+          }
+
+          submitQuickRating({ ...quickRatingDraft, rating });
+        }}
       />
       <ToastStack toasts={toasts} />
     </>

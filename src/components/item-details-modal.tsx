@@ -1,9 +1,9 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { ExternalLink, X } from "lucide-react";
-import { formatStatus } from "@/lib/utils";
+import { useEffect, useState, type MouseEvent } from "react";
+import { ExternalLink, Pencil, X } from "lucide-react";
+import { formatStatus, getRatingColor } from "@/lib/utils";
 import type { CategoryGlobalType, MediaItemData } from "@/types/app";
 
 interface ItemDetailsModalProps {
@@ -12,6 +12,8 @@ interface ItemDetailsModalProps {
   categoryGlobalType: CategoryGlobalType;
   item: MediaItemData | null;
   onClose: () => void;
+  onEdit: () => void;
+  onQuickRate: (event: MouseEvent<HTMLDivElement>) => void;
 }
 
 interface DetailsPayload {
@@ -74,12 +76,42 @@ function formatMaybeValue(value: string | null) {
   return value ?? "—";
 }
 
+function findExtraValue(
+  extras: Array<{ label: string; value: string }> | undefined,
+  labels: string[],
+) {
+  const entry = (extras ?? []).find((item) =>
+    labels.some((label) => item.label.toLowerCase() === label.toLowerCase()),
+  );
+  return entry?.value ?? null;
+}
+
+function hasValue(value: string | null | undefined) {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  return value.trim().length > 0;
+}
+
+function ratingPillStyle(value: number | null) {
+  const accent = getRatingColor(value);
+
+  return {
+    backgroundImage: `linear-gradient(135deg, rgba(0,0,0,0.82), rgba(0,0,0,0.66)), linear-gradient(135deg, ${accent}44, ${accent}1f)`,
+    borderColor: `${accent}88`,
+    boxShadow: `0 0 0 1px ${accent}22 inset`,
+  };
+}
+
 export function ItemDetailsModal({
   open,
   categoryId,
   categoryGlobalType,
   item,
   onClose,
+  onEdit,
+  onQuickRate,
 }: ItemDetailsModalProps) {
   useBodyScrollLock(open);
   const [loading, setLoading] = useState(false);
@@ -145,6 +177,60 @@ export function ItemDetailsModal({
   const cover = external?.imageUrl || item.imageUrl;
   const title = external?.title || item.title;
   const sourceUrl = external?.sourceUrl || item.sourceUrl;
+  const episodesValue = findExtraValue(external?.extras, ["Episodes"]);
+  const durationValue = findExtraValue(external?.extras, ["Duration", "Runtime"]);
+  const pagesValue = findExtraValue(external?.extras, ["Pages", "Page count"]);
+  const platformsValue = findExtraValue(external?.extras, ["Platforms", "Platform"]);
+  const publisherValue = findExtraValue(external?.extras, ["Publisher"]);
+  const usedExtraLabels = new Set<string>();
+  const registerUsedLabels = (labels: string[]) => {
+    labels.forEach((label) => usedExtraLabels.add(label.toLowerCase()));
+  };
+  const primaryStats: Array<{ label: string; value: string }> = [];
+
+  if (categoryGlobalType === "movie" || categoryGlobalType === "anime") {
+    if (hasValue(episodesValue)) {
+      primaryStats.push({ label: "Episodes", value: episodesValue! });
+      registerUsedLabels(["Episodes"]);
+    }
+
+    if (hasValue(durationValue)) {
+      primaryStats.push({ label: "Duration", value: durationValue! });
+      registerUsedLabels(["Duration", "Runtime"]);
+    }
+  }
+
+  if (categoryGlobalType === "game" && hasValue(platformsValue)) {
+    primaryStats.push({ label: "Platforms", value: platformsValue! });
+    registerUsedLabels(["Platforms", "Platform"]);
+  }
+
+  if (categoryGlobalType === "book" && hasValue(pagesValue)) {
+    primaryStats.push({ label: "Pages", value: pagesValue! });
+    registerUsedLabels(["Pages", "Page count"]);
+  }
+
+  if (hasValue(external?.year ?? null)) {
+    primaryStats.push({ label: "Year", value: external?.year ?? "" });
+  }
+
+  if (categoryGlobalType === "book" && hasValue(publisherValue)) {
+    primaryStats.push({ label: "Publisher", value: publisherValue! });
+    registerUsedLabels(["Publisher"]);
+  }
+
+  if (hasValue(external?.author ?? null)) {
+    primaryStats.push({
+      label: categoryGlobalType === "game" ? "Studio" : "Author / Creator",
+      value: external?.author ?? "",
+    });
+  }
+
+  primaryStats.push({ label: "Your status", value: formatStatus(item.status) });
+
+  const remainingExtras = (external?.extras ?? []).filter(
+    (entry) => !usedExtraLabels.has(entry.label.toLowerCase()),
+  );
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-y-auto overscroll-contain bg-stone-950/45 p-3 backdrop-blur-sm sm:items-center sm:p-4">
@@ -157,20 +243,30 @@ export function ItemDetailsModal({
               </p>
               <h2 className="mt-2 truncate text-xl font-semibold text-stone-100">{title}</h2>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-ui)] border border-[var(--line)] text-stone-400 transition hover:text-white"
-              aria-label="Close details"
-            >
-              <X size={18} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onEdit}
+                className="inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-ui)] border border-[var(--line)] px-3 text-sm font-medium text-stone-200 transition hover:border-white/20 hover:text-white"
+              >
+                <Pencil size={14} />
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-ui)] border border-[var(--line)] text-stone-400 transition hover:text-white"
+                aria-label="Close details"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
           <div className="grid items-start gap-4 md:grid-cols-[210px_1fr]">
-            <div className="self-start overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--muted)]">
+            <div className="relative self-start overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--muted)]">
               {cover ? (
                 <Image
                   src={cover}
@@ -185,6 +281,42 @@ export function ItemDetailsModal({
                   No cover
                 </div>
               )}
+              <div className="absolute bottom-2 left-2 flex flex-col gap-1.5">
+                <div
+                  className="rounded-[var(--radius-ui)] border px-2 py-1 text-[11px] font-semibold text-white backdrop-blur"
+                  style={ratingPillStyle(external?.globalRating ?? null)}
+                >
+                  Global: {formatMaybeRating(external?.globalRating ?? null)}
+                </div>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onQuickRate(event);
+                  }}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onQuickRate(event as unknown as MouseEvent<HTMLDivElement>);
+                    }
+                  }}
+                  className="rounded-[var(--radius-ui)] border px-2 py-1 text-[11px] font-semibold text-white backdrop-blur"
+                  style={ratingPillStyle(item.myRating)}
+                >
+                  You: {formatMaybeRating(item.myRating)}
+                </div>
+                {item.partnerLabel || item.partnerRating !== null ? (
+                  <div
+                    className="rounded-[var(--radius-ui)] border px-2 py-1 text-[11px] font-semibold text-white backdrop-blur"
+                    style={ratingPillStyle(item.partnerRating)}
+                  >
+                    {(item.partnerLabel ?? "Partner")}: {formatMaybeRating(item.partnerRating)}
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <div className="space-y-4 min-w-0">
@@ -197,36 +329,21 @@ export function ItemDetailsModal({
                 </span>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--card)] px-3 py-2">
-                  <p className="text-xs uppercase tracking-[0.12em] text-stone-400">Global rating</p>
-                  <p className="mt-1 text-sm font-semibold text-stone-100">
-                    {formatMaybeRating(external?.globalRating ?? null)}
-                  </p>
+              {primaryStats.length ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {primaryStats.map((entry) => (
+                    <div
+                      key={`${entry.label}-${entry.value}`}
+                      className="rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--card)] px-3 py-2"
+                    >
+                      <p className="text-xs uppercase tracking-[0.12em] text-stone-400">{entry.label}</p>
+                      <p className="mt-1 text-sm font-semibold text-stone-100">
+                        {formatMaybeValue(entry.value)}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                <div className="rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--card)] px-3 py-2">
-                  <p className="text-xs uppercase tracking-[0.12em] text-stone-400">Your rating</p>
-                  <p className="mt-1 text-sm font-semibold text-stone-100">
-                    {formatMaybeRating(item.myRating)}
-                  </p>
-                </div>
-                <div className="rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--card)] px-3 py-2">
-                  <p className="text-xs uppercase tracking-[0.12em] text-stone-400">Your status</p>
-                  <p className="mt-1 text-sm font-semibold text-stone-100">{formatStatus(item.status)}</p>
-                </div>
-                <div className="rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--card)] px-3 py-2">
-                  <p className="text-xs uppercase tracking-[0.12em] text-stone-400">Year</p>
-                  <p className="mt-1 text-sm font-semibold text-stone-100">
-                    {formatMaybeValue(external?.year ?? null)}
-                  </p>
-                </div>
-                <div className="rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--card)] px-3 py-2 sm:col-span-2">
-                  <p className="text-xs uppercase tracking-[0.12em] text-stone-400">Author / Creator</p>
-                  <p className="mt-1 text-sm font-semibold text-stone-100">
-                    {formatMaybeValue(external?.author ?? null)}
-                  </p>
-                </div>
-              </div>
+              ) : null}
 
               {external?.genres?.length ? (
                 <div>
@@ -244,9 +361,9 @@ export function ItemDetailsModal({
                 </div>
               ) : null}
 
-              {external?.extras?.length ? (
+              {remainingExtras.length ? (
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {external.extras.map((entry) => (
+                  {remainingExtras.map((entry) => (
                     <div
                       key={`${entry.label}-${entry.value}`}
                       className="rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--card)] px-3 py-2"

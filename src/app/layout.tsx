@@ -15,9 +15,44 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://what-shall-we-see.vercel.app",
+  ),
   title: "What Shall We See",
   description:
     "A collaborative media tracker for movies, series, books, manga, and manhwa.",
+  icons: {
+    icon: [
+      {
+        url: "/wsws-favicon-16x16.png",
+        type: "image/png",
+        sizes: "16x16",
+      },
+    ],
+    shortcut: "/wsws-favicon-16x16.png",
+    apple: "/wsws-favicon-16x16.png",
+  },
+  openGraph: {
+    title: "What Shall We See",
+    description:
+      "A collaborative media tracker for movies, series, books, manga, and manhwa.",
+    type: "website",
+    images: [
+      {
+        url: "/branding/cd8674eb-d1aa-4bce-a71b-2a5e17c58eed.png",
+        width: 1200,
+        height: 630,
+        alt: "What Shall We See preview image",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "What Shall We See",
+    description:
+      "A collaborative media tracker for movies, series, books, manga, and manhwa.",
+    images: ["/branding/cd8674eb-d1aa-4bce-a71b-2a5e17c58eed.png"],
+  },
 };
 
 export default function RootLayout({

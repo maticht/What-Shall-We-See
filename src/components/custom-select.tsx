@@ -85,27 +85,15 @@ export function CustomSelect({
       const margin = 12;
 
       const spaceBelow = viewportHeight - rect.bottom - margin;
-      const spaceAbove = rect.top - margin;
-      const shouldOpenAbove =
-        (spaceBelow < 180 && spaceAbove > spaceBelow) || spaceAbove > 320;
-      const availableSpace = shouldOpenAbove ? spaceAbove : spaceBelow;
       const compactItemHeight = 34;
       const panelChrome = 8;
       const contentHeight = options.length * compactItemHeight + panelChrome;
+      const top = rect.bottom + gap;
+      const maxHeightByViewport = Math.max(90, viewportHeight - margin - top);
       const availableHeight = Math.max(
         90,
-        Math.min(contentHeight, Math.min(320, availableSpace - gap)),
+        Math.min(contentHeight, Math.min(320, Math.max(90, spaceBelow - gap), maxHeightByViewport)),
       );
-
-      let top = shouldOpenAbove
-        ? rect.top - gap - availableHeight
-        : rect.bottom + gap;
-
-      if (top < margin) {
-        top = margin;
-      } else if (top + availableHeight > viewportHeight - margin) {
-        top = viewportHeight - margin - availableHeight;
-      }
 
       const clampedLeft = Math.min(
         rect.left,
