@@ -424,33 +424,7 @@ export function CategoryPageShell({
   };
 
   const visibleItems = useMemo(() => {
-    const filtered = pageItems.filter((item) => {
-      if (statusFilter !== "all" && item.status !== statusFilter) {
-        return false;
-      }
-
-      const score = item.myRating;
-
-      if (ratingFilter === "rated" && score === null) {
-        return false;
-      }
-
-      if (ratingFilter === "unrated" && score !== null) {
-        return false;
-      }
-
-      if (ratingFilter === "high" && (score === null || score < 7)) {
-        return false;
-      }
-
-      if (ratingFilter === "low" && (score === null || score >= 7)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    return [...filtered].sort((left, right) => {
+    return [...pageItems].sort((left, right) => {
       switch (sort) {
         case "title_asc":
           return left.title.localeCompare(right.title);
@@ -463,7 +437,7 @@ export function CategoryPageShell({
           return right.updatedAt.localeCompare(left.updatedAt);
       }
     });
-  }, [pageItems, sort, statusFilter, ratingFilter]);
+  }, [pageItems, sort]);
 
   const loadPage = useCallback(async (pageNumber: number) => {
     const boundedPage = Math.max(1, Math.min(pageNumber, totalPages));
@@ -472,11 +446,11 @@ export function CategoryPageShell({
     setLoadingPage(true);
 
     try {
-      const searchQuery = normalizedQuery
-        ? `&q=${encodeURIComponent(normalizedQuery)}`
-        : "";
+      const searchQuery = normalizedQuery ? `&q=${encodeURIComponent(normalizedQuery)}` : "";
+      const statusQuery = `&status=${encodeURIComponent(statusFilter)}`;
+      const ratingQuery = `&ratingFilter=${encodeURIComponent(ratingFilter)}`;
       const data = await requestPage(
-        `/api/categories/${category.id}/items?offset=${offset}&limit=${PAGE_SIZE}&range=${offset}:${offset + PAGE_SIZE - 1}${searchQuery}`,
+        `/api/categories/${category.id}/items?offset=${offset}&limit=${PAGE_SIZE}&range=${offset}:${offset + PAGE_SIZE - 1}${searchQuery}${statusQuery}${ratingQuery}`,
       );
 
       setPageItems(data.items);
@@ -490,7 +464,7 @@ export function CategoryPageShell({
     } finally {
       setLoadingPage(false);
     }
-  }, [category.id, normalizedQuery, totalPages]);
+  }, [category.id, normalizedQuery, ratingFilter, statusFilter, totalPages]);
 
   useEffect(() => {
     if (!didHydrateSearchRef.current) {
@@ -505,7 +479,7 @@ export function CategoryPageShell({
     }, 250);
 
     return () => window.clearTimeout(timeout);
-  }, [loadPage, normalizedQuery]);
+  }, [loadPage, normalizedQuery, statusFilter, ratingFilter]);
 
   const runMutation = (work: () => Promise<void>, successMessage: string) => {
     startTransition(async () => {

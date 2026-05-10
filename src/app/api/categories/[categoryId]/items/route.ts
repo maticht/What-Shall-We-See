@@ -13,6 +13,32 @@ function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const STATUS_FILTER_VALUES = ["all", "planned", "in_progress", "done", "dropped"] as const;
+const RATING_FILTER_VALUES = ["all", "rated", "unrated", "high", "low"] as const;
+
+type StatusFilter = (typeof STATUS_FILTER_VALUES)[number];
+type RatingFilter = (typeof RATING_FILTER_VALUES)[number];
+
+function parseStatusFilter(value: string | null): StatusFilter {
+  if (!value) {
+    return "all";
+  }
+
+  return STATUS_FILTER_VALUES.includes(value as StatusFilter)
+    ? (value as StatusFilter)
+    : "all";
+}
+
+function parseRatingFilter(value: string | null): RatingFilter {
+  if (!value) {
+    return "all";
+  }
+
+  return RATING_FILTER_VALUES.includes(value as RatingFilter)
+    ? (value as RatingFilter)
+    : "all";
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ categoryId: string }> },
@@ -43,7 +69,9 @@ export async function GET(
   const url = new URL(request.url);
   const { offset, limit } = parseItemPagination(url.searchParams);
   const query = (url.searchParams.get("q") ?? "").trim();
-  const itemFilter =
+  const statusFilter = parseStatusFilter(url.searchParams.get("status"));
+  const ratingFilter = parseRatingFilter(url.searchParams.get("ratingFilter"));
+  const itemFilter: Record<string, unknown> =
     query.length > 0
       ? {
           categoryId: category._id,
@@ -53,6 +81,20 @@ export async function GET(
           },
         }
       : { categoryId: category._id };
+
+  if (statusFilter !== "all") {
+    itemFilter.status = statusFilter;
+  }
+
+  if (ratingFilter === "rated") {
+    itemFilter.ratings = { $elemMatch: { userId: user._id } };
+  } else if (ratingFilter === "unrated") {
+    itemFilter.ratings = { $not: { $elemMatch: { userId: user._id } } };
+  } else if (ratingFilter === "high") {
+    itemFilter.ratings = { $elemMatch: { userId: user._id, value: { $gte: 7 } } };
+  } else if (ratingFilter === "low") {
+    itemFilter.ratings = { $elemMatch: { userId: user._id, value: { $lt: 7 } } };
+  }
 
   const [items, total] = await Promise.all([
     Item.find(itemFilter)
