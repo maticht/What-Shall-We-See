@@ -7,6 +7,7 @@ A responsive Next.js app for tracking movies, series, books, manga, and manhwa w
 - card statuses: planned, in progress, done
 - personal ratings and remote cover image URLs
 - connection codes that unlock collaborative categories
+- global category types (films, games, anime, books, other) with optional smart suggestions
 - a restrained dark interface with consistent controls
 
 ## Stack
@@ -28,6 +29,10 @@ NEXTAUTH_SECRET=
 NEXTAUTH_URL=
 AUTH_GOOGLE_ID=
 AUTH_GOOGLE_SECRET=
+TMDB_ACCESS_TOKEN=
+TMDB_API_KEY=
+IGDB_CLIENT_ID=
+IGDB_CLIENT_SECRET=
 ```
 
 For Vercel production, set:

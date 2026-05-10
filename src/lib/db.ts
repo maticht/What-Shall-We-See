@@ -5,11 +5,16 @@ declare global {
     | {
         conn: typeof mongoose | null;
         promise: Promise<typeof mongoose> | null;
+        categoryGlobalTypeBackfill: Promise<void> | null;
       }
     | undefined;
 }
 
-const cache = global.mongooseCache ?? { conn: null, promise: null };
+const cache = global.mongooseCache ?? {
+  conn: null,
+  promise: null,
+  categoryGlobalTypeBackfill: null,
+};
 
 global.mongooseCache = cache;
 
@@ -31,6 +36,18 @@ export async function connectToDatabase() {
   }
 
   cache.conn = await cache.promise;
+
+  if (!cache.categoryGlobalTypeBackfill) {
+    cache.categoryGlobalTypeBackfill = (async () => {
+      const { default: Category } = await import("@/models/category");
+      await Category.updateMany(
+        { globalType: { $exists: false } },
+        { $set: { globalType: "other" } },
+      );
+    })();
+  }
+
+  await cache.categoryGlobalTypeBackfill;
 
   return cache.conn;
 }

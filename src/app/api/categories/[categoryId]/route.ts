@@ -38,6 +38,7 @@ export async function PATCH(
       $set: {
         name: payload.name,
         emoji: payload.emoji,
+        globalType: payload.globalType,
         lastEditedByName: user.name,
         lastEditedByEmail: user.email,
       },

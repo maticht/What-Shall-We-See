@@ -52,3 +52,13 @@ export function getRatingColor(rating: number | null) {
 
   return "#22c55e";
 }
+
+export function detectPreferredLanguageFromText(text: string): "ru" | "en" {
+  const value = text.trim();
+
+  if (!value) {
+    return "en";
+  }
+
+  return /[\u0400-\u04FF]/.test(value) ? "ru" : "en";
+}

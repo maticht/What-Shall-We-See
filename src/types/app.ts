@@ -1,4 +1,5 @@
 export type CategoryScope = "personal" | "shared";
+export type CategoryGlobalType = "movie" | "game" | "anime" | "book" | "other";
 
 export type MediaStatus = "planned" | "in_progress" | "done";
 
@@ -23,6 +24,7 @@ export interface CategoryData {
   name: string;
   emoji: string;
   scope: CategoryScope;
+  globalType: CategoryGlobalType;
   connectionKey: string | null;
   ownerId: string | null;
   createdBy: string;

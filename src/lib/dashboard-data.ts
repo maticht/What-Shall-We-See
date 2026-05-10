@@ -148,6 +148,7 @@ export async function ensureDefaultPersonalCategories(userId: string) {
     DEFAULT_PERSONAL_CATEGORIES.map((category) => ({
       name: category.name,
       emoji: category.emoji,
+      globalType: category.globalType,
       scope: "personal",
       ownerId: userId,
       createdBy: userId,

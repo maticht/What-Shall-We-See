@@ -1,5 +1,13 @@
 ﻿import { model, models, Schema, type InferSchemaType } from "mongoose";
 
+const GLOBAL_TYPE_DEFINITION = {
+  type: String,
+  enum: ["movie", "game", "anime", "book", "other"],
+  default: "other",
+  required: true,
+  index: true,
+} as const;
+
 const categorySchema = new Schema(
   {
     name: {
@@ -17,6 +25,7 @@ const categorySchema = new Schema(
       enum: ["personal", "shared"],
       required: true,
     },
+    globalType: GLOBAL_TYPE_DEFINITION,
     ownerId: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -54,6 +63,15 @@ export type CategoryRecord = InferSchemaType<typeof categorySchema> & {
   _id: { toString(): string };
 };
 
-const Category = models.Category || model("Category", categorySchema);
+const existingCategoryModel = models.Category;
+
+if (existingCategoryModel && !existingCategoryModel.schema.path("globalType")) {
+  existingCategoryModel.schema.add({
+    globalType: GLOBAL_TYPE_DEFINITION,
+  });
+  existingCategoryModel.recompileSchema?.();
+}
+
+const Category = existingCategoryModel || model("Category", categorySchema);
 
 export default Category;

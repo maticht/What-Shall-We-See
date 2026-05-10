@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       name: payload.name,
       emoji: payload.emoji,
       scope: payload.scope,
+      globalType: payload.globalType,
       ownerId: payload.scope === "personal" ? user._id : null,
       connectionKey: payload.scope === "shared" ? payload.connectionKey : null,
       createdBy: user._id,

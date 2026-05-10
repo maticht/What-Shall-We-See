@@ -1,8 +1,15 @@
-import type { CategoryScope, MediaStatus } from "@/types/app";
+import type { CategoryGlobalType, CategoryScope, MediaStatus } from "@/types/app";
 import { DEFAULT_CATEGORY_EMOJI } from "@/lib/constants";
 import { normalizeConnectionKey } from "@/lib/utils";
 
 const STATUS_VALUES: MediaStatus[] = ["planned", "in_progress", "done"];
+const CATEGORY_GLOBAL_TYPE_VALUES: CategoryGlobalType[] = [
+  "movie",
+  "game",
+  "anime",
+  "book",
+  "other",
+];
 
 function asString(value: unknown) {
   return typeof value === "string" ? value : "";
@@ -56,12 +63,16 @@ export function parseCategoryPayload(payload: unknown): {
   name: string;
   emoji: string;
   scope: CategoryScope;
+  globalType: CategoryGlobalType;
   connectionKey: string | null;
 } {
   const data = typeof payload === "object" && payload !== null ? payload : {};
   const name = asString((data as { name?: unknown }).name).trim();
   const emoji = asString((data as { emoji?: unknown }).emoji).trim();
   const scope = asString((data as { scope?: unknown }).scope) as CategoryScope;
+  const globalType = asString(
+    (data as { globalType?: unknown }).globalType,
+  ) as CategoryGlobalType;
   const rawConnectionKey = (data as { connectionKey?: unknown }).connectionKey;
 
   if (name.length < 2 || name.length > 48) {
@@ -72,6 +83,10 @@ export function parseCategoryPayload(payload: unknown): {
     throw new Error("Category scope must be personal or shared.");
   }
 
+  if (!CATEGORY_GLOBAL_TYPE_VALUES.includes(globalType)) {
+    throw new Error("Category global type is invalid.");
+  }
+
   if (emoji.length > 32) {
     throw new Error("Category emoji is too long.");
   }
@@ -80,6 +95,7 @@ export function parseCategoryPayload(payload: unknown): {
     name,
     emoji: emoji || DEFAULT_CATEGORY_EMOJI,
     scope,
+    globalType,
     connectionKey: scope === "shared" ? parseConnectionKey(rawConnectionKey) : null,
   };
 }
@@ -88,6 +104,9 @@ export function parseCategoryPatchPayload(payload: unknown) {
   const data = typeof payload === "object" && payload !== null ? payload : {};
   const name = asString((data as { name?: unknown }).name).trim();
   const emoji = asString((data as { emoji?: unknown }).emoji).trim();
+  const globalType = asString(
+    (data as { globalType?: unknown }).globalType,
+  ) as CategoryGlobalType;
 
   if (name.length < 2 || name.length > 48) {
     throw new Error("Category name must be between 2 and 48 characters.");
@@ -97,7 +116,11 @@ export function parseCategoryPatchPayload(payload: unknown) {
     throw new Error("Category emoji is too long.");
   }
 
-  return { name, emoji: emoji || DEFAULT_CATEGORY_EMOJI };
+  if (!CATEGORY_GLOBAL_TYPE_VALUES.includes(globalType)) {
+    throw new Error("Category global type is invalid.");
+  }
+
+  return { name, emoji: emoji || DEFAULT_CATEGORY_EMOJI, globalType };
 }
 
 export function parseItemPayload(payload: unknown): {

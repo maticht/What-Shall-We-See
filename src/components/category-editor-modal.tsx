@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Smile, Trash2, X } from "lucide-react";
 import { CustomSelect } from "@/components/custom-select";
+import { CATEGORY_GLOBAL_TYPE_OPTIONS } from "@/lib/constants";
+import type { CategoryGlobalType } from "@/types/app";
 import { Button } from "@/components/ui/button";
 import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
@@ -13,6 +15,7 @@ export interface CategoryEditorValue {
   name: string;
   emoji: string;
   scope: "personal" | "shared";
+  globalType: CategoryGlobalType;
   connectionKey: string;
 }
 
@@ -108,6 +111,11 @@ export function CategoryEditorModal({
       description: "Visible to everyone with this connection code.",
     },
   ];
+  const globalTypeOptions = CATEGORY_GLOBAL_TYPE_OPTIONS.map((option) => ({
+    value: option.value,
+    label: option.label,
+    description: option.description,
+  }));
   const connectionOptions = connections.map((connection) => ({
     value: connection,
     label: connection,
@@ -208,6 +216,22 @@ export function CategoryEditorModal({
                   />
                 </label>
 
+                <label className="block space-y-2">
+                  <FieldLabel>Global type</FieldLabel>
+                  <CustomSelect
+                    value={value.globalType}
+                    onChange={(globalType) =>
+                      onChange({
+                        ...value,
+                        globalType: globalType as CategoryEditorValue["globalType"],
+                      })
+                    }
+                    options={globalTypeOptions}
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block space-y-2">
                   <FieldLabel>Connection</FieldLabel>
                   <CustomSelect

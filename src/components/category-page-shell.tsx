@@ -20,6 +20,7 @@ import {
   Search,
 } from "lucide-react";
 import { CustomSelect } from "@/components/custom-select";
+import { ItemDetailsModal } from "@/components/item-details-modal";
 import { ItemEditorModal, type ItemEditorValue } from "@/components/item-editor-modal";
 import { SignOutButton, SignedInIndicator } from "@/components/auth-buttons";
 import { StatusBadge } from "@/components/status-badge";
@@ -84,6 +85,14 @@ const statusRank = {
   planned: 0,
   in_progress: 1,
   done: 2,
+};
+
+const categoryGlobalTypeLabel: Record<CategoryData["globalType"], string> = {
+  movie: "Films",
+  game: "Games",
+  anime: "Anime",
+  book: "Books",
+  other: "Other",
 };
 
 async function requestJson(url: string, init?: RequestInit) {
@@ -179,18 +188,32 @@ function ItemCard({
   item,
   viewMode,
   isShared,
+  onOpenDetails,
   onEdit,
 }: {
   item: MediaItemData;
   viewMode: ViewMode;
   isShared: boolean;
+  onOpenDetails: () => void;
   onEdit: () => void;
 }) {
   const isList = viewMode === "list";
   const isGrid2 = viewMode === "grid2";
 
   return (
-    <article className="overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--card)]">
+    <article
+      className="overflow-hidden rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--card)] transition hover:border-white/20"
+      role="button"
+      tabIndex={0}
+      onClick={onOpenDetails}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpenDetails();
+        }
+      }}
+      aria-label={`Open details for ${item.title}`}
+    >
       <div
         className={
           isList
@@ -254,13 +277,21 @@ function ItemCard({
                 href={item.sourceUrl}
                 target="_blank"
                 rel="noreferrer"
+                onClick={(event) => event.stopPropagation()}
                 className="inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted)] px-3 py-2 text-sm font-medium text-stone-100 transition hover:border-white/20 hover:text-white"
               >
                 <ExternalLink size={14} />
                 Source
               </a>
             ) : null}
-            <Button type="button" variant="secondary" onClick={onEdit}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={(event) => {
+                event.stopPropagation();
+                onEdit();
+              }}
+            >
               <Pencil size={15} />
               Edit
             </Button>
@@ -293,6 +324,7 @@ export function CategoryPageShell({
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const toastCounter = useRef(0);
   const [itemDraft, setItemDraft] = useState<ItemEditorValue | null>(null);
+  const [detailsItem, setDetailsItem] = useState<MediaItemData | null>(null);
   const [pageItems, setPageItems] = useState<MediaItemData[]>(firstPage.items);
   const [totalItems, setTotalItems] = useState(firstPage.total);
   const [currentPage, setCurrentPage] = useState(
@@ -482,6 +514,9 @@ export function CategoryPageShell({
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
                   {category.scope}
                 </p>
+                <span className="rounded-[var(--radius-ui)] border border-[var(--line)] px-2 py-1 text-xs text-stone-300">
+                  {categoryGlobalTypeLabel[category.globalType]}
+                </span>
                 {category.connectionKey ? (
                   <span className="rounded-[var(--radius-ui)] border border-[var(--line)] px-2 py-1 text-xs text-stone-300">
                     {category.connectionKey}
@@ -677,6 +712,7 @@ export function CategoryPageShell({
                 item={item}
                 viewMode={viewMode}
                 isShared={isSharedCategory}
+                onOpenDetails={() => setDetailsItem(item)}
                 onEdit={() => setItemDraft(buildEditItemDraft(category, item))}
               />
             ))
@@ -739,11 +775,19 @@ export function CategoryPageShell({
       <ItemEditorModal
         open={Boolean(itemDraft)}
         value={itemDraft}
+        categoryGlobalType={category.globalType}
         pending={pending || loadingPage}
         onChange={setItemDraft}
         onClose={() => setItemDraft(null)}
         onSubmit={submitItemDraft}
         onDelete={deleteFromDraft}
+      />
+      <ItemDetailsModal
+        open={Boolean(detailsItem)}
+        categoryId={category.id}
+        categoryGlobalType={category.globalType}
+        item={detailsItem}
+        onClose={() => setDetailsItem(null)}
       />
       <ToastStack toasts={toasts} />
     </>

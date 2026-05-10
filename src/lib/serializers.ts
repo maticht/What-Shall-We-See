@@ -87,6 +87,7 @@ export function serializeCategory(
     name: string;
     emoji?: string | null;
     scope: CategoryData["scope"];
+    globalType?: CategoryData["globalType"];
     connectionKey?: string | null;
     ownerId?: { toString(): string } | null;
     createdBy: { toString(): string };
@@ -102,6 +103,7 @@ export function serializeCategory(
     name: category.name,
     emoji: category.emoji || DEFAULT_CATEGORY_EMOJI,
     scope: category.scope,
+    globalType: category.globalType ?? "other",
     connectionKey: category.connectionKey ?? null,
     ownerId: category.ownerId ? category.ownerId.toString() : null,
     createdBy: category.createdBy.toString(),

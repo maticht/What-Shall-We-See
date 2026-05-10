@@ -26,6 +26,14 @@ import { ToastStack, type ToastMessage } from "@/components/ui/toast-stack";
 
 type DashboardTab = "personal" | "shared";
 
+const globalTypeLabel: Record<CategoryData["globalType"], string> = {
+  movie: "Films",
+  game: "Games",
+  anime: "Anime",
+  book: "Books",
+  other: "Other",
+};
+
 async function requestJson(url: string, init?: RequestInit) {
   const response = await fetch(url, {
     ...init,
@@ -55,6 +63,7 @@ function buildEmptyCategoryDraft(
     name: "",
     emoji: scope === "shared" ? "🍿" : "🎬",
     scope,
+    globalType: "movie",
     connectionKey: scope === "shared" ? connections[0] ?? "" : "",
   };
 }
@@ -95,6 +104,9 @@ function CategoryCard({
             </h3>
             <span className="rounded-[var(--radius-ui)] border border-[var(--line)] px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-300">
               {category.scope}
+            </span>
+            <span className="rounded-[var(--radius-ui)] border border-[var(--line)] px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-300">
+              {globalTypeLabel[category.globalType]}
             </span>
           </div>
           <p className="mt-2 text-sm text-stone-300">
@@ -210,6 +222,7 @@ export function DashboardShell({ data }: { data: DashboardData }) {
       name: category.name,
       emoji: category.emoji,
       scope: category.scope,
+      globalType: category.globalType,
       connectionKey: category.connectionKey ?? "",
     });
   };
@@ -224,13 +237,18 @@ export function DashboardShell({ data }: { data: DashboardData }) {
               name: draft.name,
               emoji: draft.emoji,
               scope: draft.scope,
+              globalType: draft.globalType,
               connectionKey: draft.connectionKey,
             }),
           });
         } else if (draft.categoryId) {
           await requestJson(`/api/categories/${draft.categoryId}`, {
             method: "PATCH",
-            body: JSON.stringify({ name: draft.name, emoji: draft.emoji }),
+            body: JSON.stringify({
+              name: draft.name,
+              emoji: draft.emoji,
+              globalType: draft.globalType,
+            }),
           });
         }
 
