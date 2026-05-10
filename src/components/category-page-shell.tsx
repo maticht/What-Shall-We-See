@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ChevronDown,
@@ -368,6 +368,8 @@ export function CategoryPageShell({
   }
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const backTab = searchParams.get("tab") === "shared" ? "shared" : "personal";
   const [pending, startTransition] = useTransition();
   const [loadingPage, setLoadingPage] = useState(false);
   const [query, setQuery] = useState("");
@@ -621,7 +623,7 @@ export function CategoryPageShell({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <Link
-                href="/dashboard"
+                href={`/dashboard?tab=${backTab}`}
                 className="inline-flex items-center gap-2 text-sm font-medium text-stone-300 transition hover:text-white"
               >
                 <ArrowLeft size={15} />

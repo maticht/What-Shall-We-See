@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   BookOpen,
   ExternalLink,
@@ -86,9 +86,11 @@ function generateConnectionCode(length = 8) {
 
 function CategoryCard({
   category,
+  activeTab,
   onEdit,
 }: {
   category: CategoryData;
+  activeTab: DashboardTab;
   onEdit: () => void;
 }) {
   return (
@@ -123,7 +125,7 @@ function CategoryCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Link
-          href={`/dashboard/categories/${category.id}`}
+          href={`/dashboard/categories/${category.id}?tab=${activeTab}`}
           className="inline-flex min-h-10 min-w-32 items-center justify-center gap-2 rounded-[var(--radius-ui)] border border-[var(--line)] bg-[var(--muted-strong)] px-5 py-2 text-sm font-medium text-white transition hover:border-white/20 hover:bg-[#2b2b2b]"
         >
           <ExternalLink size={15} />
@@ -140,10 +142,12 @@ function CategoryCard({
 
 function CategoryGrid({
   categories,
+  activeTab,
   emptyText,
   onEdit,
 }: {
   categories: CategoryData[];
+  activeTab: DashboardTab;
   emptyText: string;
   onEdit: (category: CategoryData) => void;
 }) {
@@ -161,6 +165,7 @@ function CategoryGrid({
         <CategoryCard
           key={category.id}
           category={category}
+          activeTab={activeTab}
           onEdit={() => onEdit(category)}
         />
       ))}
@@ -170,11 +175,14 @@ function CategoryGrid({
 
 export function DashboardShell({ data }: { data: DashboardData }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const requestedTab: DashboardTab = tabParam === "shared" ? "shared" : "personal";
   const [pending, startTransition] = useTransition();
   const [connectionInput, setConnectionInput] = useState("");
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const toastCounter = useRef(0);
-  const [activeTab, setActiveTab] = useState<DashboardTab>("personal");
+  const [activeTab, setActiveTab] = useState<DashboardTab>(requestedTab);
   const [categoryDraft, setCategoryDraft] = useState<CategoryEditorValue | null>(null);
 
   const pushToast = (tone: ToastMessage["tone"], text: string) => {
@@ -309,6 +317,13 @@ export function DashboardShell({ data }: { data: DashboardData }) {
     setConnectionInput(generateConnectionCode(8));
   };
 
+  const selectTab = (nextTab: DashboardTab) => {
+    setActiveTab(nextTab);
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("tab", nextTab);
+    router.replace(`/dashboard?${nextParams.toString()}`, { scroll: false });
+  };
+
   return (
     <>
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
@@ -331,7 +346,7 @@ export function DashboardShell({ data }: { data: DashboardData }) {
           <div className="mt-4 inline-flex rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--card)] p-1">
             <button
               type="button"
-              onClick={() => setActiveTab("personal")}
+              onClick={() => selectTab("personal")}
               className={`rounded-[var(--radius-ui)] px-4 py-2 text-sm font-medium transition ${
                 activeTab === "personal"
                   ? "bg-[var(--muted-strong)] text-white"
@@ -342,7 +357,7 @@ export function DashboardShell({ data }: { data: DashboardData }) {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("shared")}
+              onClick={() => selectTab("shared")}
               className={`rounded-[var(--radius-ui)] px-4 py-2 text-sm font-medium transition ${
                 activeTab === "shared"
                   ? "bg-[var(--muted-strong)] text-white"
@@ -375,6 +390,7 @@ export function DashboardShell({ data }: { data: DashboardData }) {
             </div>
             <CategoryGrid
               categories={data.personalCategories}
+              activeTab={activeTab}
               emptyText="No personal categories yet."
               onEdit={editCategory}
             />
@@ -415,6 +431,7 @@ export function DashboardShell({ data }: { data: DashboardData }) {
                       </div>
                       <CategoryGrid
                         categories={categories}
+                        activeTab={activeTab}
                         emptyText="No shared categories for this connection."
                         onEdit={editCategory}
                       />
