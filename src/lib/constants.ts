@@ -63,4 +63,9 @@ export const STATUS_OPTIONS: Array<{
     label: "Done",
     description: "Finished and rated.",
   },
+  {
+    value: "dropped",
+    label: "Dropped",
+    description: "Stopped and not continuing.",
+  },
 ];

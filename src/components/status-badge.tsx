@@ -3,10 +3,11 @@ import { cn, formatStatus } from "@/lib/utils";
 
 const toneMap: Record<MediaStatus, string> = {
   planned:
-    "border-amber-500/35 bg-amber-500/12 text-amber-200",
+    "border-stone-500/35 bg-stone-500/12 text-stone-200",
   in_progress:
     "border-sky-500/35 bg-sky-500/12 text-sky-200",
   done: "border-emerald-500/35 bg-emerald-500/12 text-emerald-200",
+  dropped: "border-rose-500/35 bg-rose-500/12 text-rose-200",
 };
 
 export function StatusBadge({

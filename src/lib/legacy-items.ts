@@ -16,7 +16,12 @@ type LegacyItem = {
 };
 
 function asValidStatus(value: unknown): MediaStatus {
-  if (value === "planned" || value === "in_progress" || value === "done") {
+  if (
+    value === "planned" ||
+    value === "in_progress" ||
+    value === "done" ||
+    value === "dropped"
+  ) {
     return value;
   }
 

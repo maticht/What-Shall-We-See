@@ -39,7 +39,7 @@ import type {
 
 type SortKey = "updated_desc" | "title_asc" | "status_asc" | "rating_desc";
 type ViewMode = "list" | "grid2" | "grid3";
-type StatusFilter = "all" | "planned" | "in_progress" | "done";
+type StatusFilter = "all" | "planned" | "in_progress" | "done" | "dropped";
 type RatingFilter = "all" | "rated" | "unrated" | "high" | "low";
 
 const PAGE_SIZE = 50;
@@ -58,7 +58,7 @@ const sortOptions = [
   {
     value: "status_asc",
     label: "Status",
-    description: "Planned, active, done.",
+    description: "Planned, active, done, dropped.",
   },
   {
     value: "rating_desc",
@@ -72,6 +72,7 @@ const statusFilterOptions = [
   { value: "planned", label: "Planned", description: "Only planned." },
   { value: "in_progress", label: "In progress", description: "Only in progress." },
   { value: "done", label: "Done", description: "Only done." },
+  { value: "dropped", label: "Dropped", description: "Only dropped." },
 ];
 
 const ratingFilterOptions = [
@@ -86,6 +87,7 @@ const statusRank = {
   planned: 0,
   in_progress: 1,
   done: 2,
+  dropped: 3,
 };
 
 const categoryGlobalTypeLabel: Record<CategoryData["globalType"], string> = {

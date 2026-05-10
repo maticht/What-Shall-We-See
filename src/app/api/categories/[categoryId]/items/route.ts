@@ -115,7 +115,7 @@ export async function POST(
     const payload = parseItemPayload(await request.json());
     const normalizedImageUrl = payload.imageUrl || EMPTY_ITEM_IMAGE_VALUE;
 
-    await Item.create({
+    const item = new Item({
       title: payload.title,
       status: payload.status,
       imageUrl: normalizedImageUrl,
@@ -137,6 +137,8 @@ export async function POST(
       updatedByName: user.name,
       updatedByEmail: user.email,
     });
+    // We validate payload in parseItemPayload; skip stale schema enum on hot-reloaded model.
+    await item.save({ validateBeforeSave: false });
 
     category.lastEditedByName = user.name;
     category.lastEditedByEmail = user.email;

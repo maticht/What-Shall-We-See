@@ -2,7 +2,7 @@ import type { CategoryGlobalType, CategoryScope, MediaStatus } from "@/types/app
 import { DEFAULT_CATEGORY_EMOJI } from "@/lib/constants";
 import { normalizeConnectionKey } from "@/lib/utils";
 
-const STATUS_VALUES: MediaStatus[] = ["planned", "in_progress", "done"];
+const STATUS_VALUES: MediaStatus[] = ["planned", "in_progress", "done", "dropped"];
 const CATEGORY_GLOBAL_TYPE_VALUES: CategoryGlobalType[] = [
   "movie",
   "game",
@@ -143,6 +143,7 @@ export function parseItemPayload(payload: unknown): {
     rawRating === "" || rawRating === null || rawRating === undefined
       ? null
       : Number(rawRating);
+  const normalizedRating = rating === 0 ? null : rating;
 
   if (title.length < 1 || title.length > 120) {
     throw new Error("Card title must be between 1 and 120 characters.");
@@ -160,7 +161,10 @@ export function parseItemPayload(payload: unknown): {
     throw new Error("Source link must be a valid http or https URL.");
   }
 
-  if (rating !== null && (!Number.isFinite(rating) || rating < 0 || rating > 10)) {
+  if (
+    normalizedRating !== null &&
+    (!Number.isFinite(normalizedRating) || normalizedRating < 0 || normalizedRating > 10)
+  ) {
     throw new Error("Rating must be between 0 and 10.");
   }
 
@@ -169,7 +173,7 @@ export function parseItemPayload(payload: unknown): {
     status,
     imageUrl,
     sourceUrl,
-    rating,
+    rating: normalizedRating,
   };
 }
 

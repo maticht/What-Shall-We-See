@@ -1,7 +1,7 @@
 export type CategoryScope = "personal" | "shared";
 export type CategoryGlobalType = "movie" | "game" | "anime" | "book" | "other";
 
-export type MediaStatus = "planned" | "in_progress" | "done";
+export type MediaStatus = "planned" | "in_progress" | "done" | "dropped";
 
 export interface MediaItemData {
   id: string;

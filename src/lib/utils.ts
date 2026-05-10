@@ -16,6 +16,8 @@ export function formatStatus(status: MediaStatus) {
       return "In progress";
     case "done":
       return "Done";
+    case "dropped":
+      return "Dropped";
     default:
       return status;
   }

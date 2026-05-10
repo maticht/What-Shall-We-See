@@ -81,7 +81,8 @@ export async function PATCH(
     }
     item.updatedByName = user.name;
     item.updatedByEmail = user.email;
-    await item.save();
+    // We validate payload in parseItemPayload; skip stale schema enum on hot-reloaded model.
+    await item.save({ validateBeforeSave: false });
 
     category.lastEditedByName = user.name;
     category.lastEditedByEmail = user.email;

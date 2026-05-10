@@ -1,4 +1,6 @@
-import { model, models, Schema, type InferSchemaType } from "mongoose";
+import mongoose, { model, models, Schema, type InferSchemaType } from "mongoose";
+
+const ITEM_STATUS_VALUES = ["planned", "in_progress", "done", "dropped"] as const;
 
 const ratingEntrySchema = new Schema(
   {
@@ -44,7 +46,7 @@ const itemSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["planned", "in_progress", "done"],
+      enum: ITEM_STATUS_VALUES,
       default: "planned",
     },
     imageUrl: {
@@ -87,6 +89,30 @@ export type ItemRecord = InferSchemaType<typeof itemSchema> & {
   categoryId: { toString(): string };
 };
 
-const Item = models.Item || model("Item", itemSchema);
+const existingItemModel = models.Item;
+let Item = existingItemModel;
+
+if (existingItemModel) {
+  const statusPath = existingItemModel.schema.path("status") as
+    | {
+        enumValues?: string[];
+      }
+    | undefined;
+
+  const enumValues = statusPath?.enumValues ?? [];
+  const hasAllStatusValues = ITEM_STATUS_VALUES.every((value) =>
+    enumValues.includes(value),
+  );
+
+  if (!hasAllStatusValues) {
+    // Hot-reload can keep a stale enum validator in memory, so rebuild model fully.
+    mongoose.deleteModel("Item");
+    Item = model("Item", itemSchema);
+  }
+}
+
+if (!Item) {
+  Item = model("Item", itemSchema);
+}
 
 export default Item;
